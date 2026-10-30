@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: fontis-backend
+  datasource:
+    url: ${FONTIS_DB_URL:jdbc:postgresql://localhost:5432/fontis}
+    username: ${FONTIS_DB_USER:fontis}
+    password: ${FONTIS_DB_PASSWORD:fontis}
+  batch:
+    job:
+      enabled: false
+  ai:
+    model:
+      # Local models through Ollama. Mistral (EU provider) will be added for the cloud comparison.
+      chat: ollama
+      embedding: ollama
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${FONTIS_OLLAMA_CHAT:qwen3:14b}
+      embedding:
+        options:
+          model: ${FONTIS_OLLAMA_EMBEDDING:bge-m3}
+    vectorstore:
+      pgvector:
+        # The schema is managed by Flyway (db/migration).
+        initialize-schema: false
+        dimensions: 1024
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

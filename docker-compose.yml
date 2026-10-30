@@ -1,0 +1,20 @@
+# Local development stack. Ollama is expected on the host (or set OLLAMA_BASE_URL),
+# so the GPU stays with the machine that has one.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: fontis
+      POSTGRES_USER: fontis
+      POSTGRES_PASSWORD: fontis
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fontis -d fontis"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  postgres-data:

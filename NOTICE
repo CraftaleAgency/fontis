@@ -1,0 +1,14 @@
+Fontis
+Copyright 2026 Flavio Biondo
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+Demo corpus
+-----------
+The demo corpus (EU AI Act, GDPR, Data Act, NIS2) is downloaded at build time from the
+Publications Office of the European Union (CELLAR / EUR-Lex) and is not redistributed in
+this repository.
+
+Source: EUR-Lex, https://eur-lex.europa.eu, © European Union, 1998-2026.
+Reuse of these documents is governed by Commission Decision 2011/833/EU on the reuse of
+Commission documents. Only the official Journal of the European Union is authentic.
