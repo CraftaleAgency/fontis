@@ -44,9 +44,12 @@ uv run fontis-bench corpus check
 # 2. Database
 cd .. && docker compose up -d
 
-# 3. Backend (tests use Testcontainers)
-cd backend && ./mvnw test && ./mvnw spring-boot:run
+# 3. Backend: tests (Testcontainers), then load and embed the corpus with bge-m3
+cd backend && ./mvnw test
+OLLAMA_BASE_URL=http://localhost:11434 ./mvnw spring-boot:run -Dspring-boot.run.profiles=ingest
 ```
+
+On one RTX 3060 the ingestion embeds 9,462 chunks in about 6.5 minutes — see [ingestion](docs/ingestion.md).
 
 ## Repository layout
 

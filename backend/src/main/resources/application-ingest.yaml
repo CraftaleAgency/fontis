@@ -1,0 +1,8 @@
+# Run the ingestion job and exit: ./mvnw spring-boot:run -Dspring-boot.run.profiles=ingest
+spring:
+  main:
+    web-application-type: none
+  batch:
+    job:
+      enabled: true
+      name: ingestCorpus

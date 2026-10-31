@@ -21,13 +21,13 @@ spring:
       embedding:
         options:
           model: ${FONTIS_OLLAMA_EMBEDDING:bge-m3}
-    vectorstore:
-      pgvector:
-        # The schema is managed by Flyway (db/migration).
-        initialize-schema: false
-        dimensions: 1024
-        index-type: HNSW
-        distance-type: COSINE_DISTANCE
+
+fontis:
+  ingest:
+    # Output of `fontis-bench corpus build`, relative to backend/.
+    corpus-dir: ${FONTIS_CORPUS_DIR:../data/corpus}
+    # Units per transaction; each one embeds every chunk of those units in one call.
+    units-per-batch: 16
 
 management:
   endpoints:
