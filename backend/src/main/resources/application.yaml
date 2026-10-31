@@ -18,6 +18,7 @@ spring:
       chat:
         options:
           model: ${FONTIS_OLLAMA_CHAT:qwen3:14b}
+          temperature: 0.1
       embedding:
         options:
           model: ${FONTIS_OLLAMA_EMBEDDING:bge-m3}
@@ -28,6 +29,15 @@ fontis:
     corpus-dir: ${FONTIS_CORPUS_DIR:../data/corpus}
     # Units per transaction; each one embeds every chunk of those units in one call.
     units-per-batch: 16
+  ask:
+    # Chunks taken from each of vector and full-text search before fusion.
+    candidates: 40
+    # Units (articles, recitals, annexes) given to the model as numbered sources.
+    max-sources: 6
+    # Below this cosine similarity of the best chunk, answer "no source" without calling the model.
+    min-similarity: 0.45
+    # Context window for the chat model; sources plus answer fit well within it.
+    num-ctx: 8192
 
 management:
   endpoints:

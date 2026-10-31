@@ -14,6 +14,7 @@ import tools.jackson.databind.json.JsonMapper;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.parameters.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.Step;
@@ -64,9 +65,9 @@ class IngestJobConfig {
 
 	@Bean
 	Step documentsStep(JobRepository jobRepository, PlatformTransactionManager tx, JdbcTemplate jdbc,
-			@Value("${fontis.ingest.corpus-dir}") Path corpusDir) {
+			@Value("${fontis.ingest.corpus-dir}") String corpusDir) {
 		return new StepBuilder("documentsStep", jobRepository).tasklet((contribution, context) -> {
-			for (Map<String, String> doc : readDocuments(corpusDir)) {
+			for (Map<String, String> doc : readDocuments(Path.of(corpusDir))) {
 				jdbc.update("""
 						INSERT INTO source_document (celex, short_name, title) VALUES (?, ?, ?)
 						ON CONFLICT (celex) DO UPDATE SET short_name = EXCLUDED.short_name, title = EXCLUDED.title
@@ -94,11 +95,15 @@ class IngestJobConfig {
 			.build();
 	}
 
+	// Step-scoped: the corpus directory is read when the job runs, not when the application starts.
 	@Bean
-	MultiResourceItemReader<CorpusUnit> unitFileReader(@Value("${fontis.ingest.corpus-dir}") Path corpusDir)
+	@StepScope
+	MultiResourceItemReader<CorpusUnit> unitFileReader(@Value("${fontis.ingest.corpus-dir}") String corpusDir)
 			throws IOException {
+		// A String, not a Path: in a web application Spring would resolve the Path as a servlet
+		// resource and reject the relative "../data/corpus".
 		Resource[] files;
-		try (var paths = Files.list(corpusDir)) {
+		try (var paths = Files.list(Path.of(corpusDir))) {
 			files = paths.filter(p -> p.toString().endsWith(".jsonl"))
 				.sorted()
 				.map(FileSystemResource::new)

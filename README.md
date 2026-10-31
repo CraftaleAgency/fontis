@@ -51,6 +51,18 @@ OLLAMA_BASE_URL=http://localhost:11434 ./mvnw spring-boot:run -Dspring-boot.run.
 
 On one RTX 3060 the ingestion embeds 9,462 chunks in about 6.5 minutes — see [ingestion](docs/ingestion.md).
 
+## Ask
+
+```bash
+OLLAMA_BASE_URL=http://localhost:11434 ./mvnw spring-boot:run
+
+curl -X POST localhost:8080/api/ask -H 'Content-Type: application/json' \
+  -d '{"question": "Quali pratiche di intelligenza artificiale sono vietate?", "lang": "ita"}'
+```
+
+The answer cites AI Act **Articolo 5** — found in the French text, linked in Italian. A question the
+corpus cannot answer gets `NO_SOURCE` or `NO_ANSWER` instead of a guess. See [answering](docs/answering.md).
+
 ## Repository layout
 
 ```
