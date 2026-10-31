@@ -51,9 +51,13 @@ class AskController {
 	/** Retrieval only, without generation: used by the benchmark to measure retrieval quality. */
 	@GetMapping("/search")
 	List<Source> search(@RequestParam @NotBlank @Size(max = 1000) String q,
-			@RequestParam(required = false) String lang, @RequestParam(required = false) Integer limit) {
+			@RequestParam(required = false) String lang, @RequestParam(required = false) Integer limit,
+			@RequestParam(defaultValue = "HYBRID") Retrieval.Mode mode,
+			@RequestParam(required = false) Double textWeight, @RequestParam(required = false) Double recitalWeight,
+			@RequestParam(required = false) Boolean sumLanguages) {
 		int n = limit == null ? this.properties.maxSources() : Math.clamp(limit, 1, 50);
-		return this.retrieval.search(q.strip(), language(lang), n).sources();
+		var options = new Retrieval.Options(mode, textWeight, recitalWeight, sumLanguages);
+		return this.retrieval.search(q.strip(), language(lang), n, options).sources();
 	}
 
 	private static String language(String lang) {

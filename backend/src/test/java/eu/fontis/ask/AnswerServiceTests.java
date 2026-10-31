@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AnswerServiceTests {
 
-	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192);
+	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1.0, 1.0, false);
 
 	private static final List<Source> SOURCES = List.of(
 			new Source("32016R0679", "art_17", "GDPR", "Articolo 17", "Diritto alla cancellazione", "url17", "deu",
@@ -82,7 +82,7 @@ class AnswerServiceTests {
 	}
 
 	private AnswerService service(double bestSimilarity, String modelReply) {
-		Retrieval retrieval = (question, lang, limit) -> new Retrieval.Result(SOURCES, bestSimilarity);
+		Retrieval retrieval = (question, lang, limit, mode) -> new Retrieval.Result(SOURCES, bestSimilarity);
 		ChatModel model = prompt -> {
 			this.prompts.add(prompt);
 			return new ChatResponse(List.of(new Generation(new AssistantMessage(modelReply))));

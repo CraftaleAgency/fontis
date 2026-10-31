@@ -10,9 +10,13 @@ import org.springframework.stereotype.Component;
 
 /**
  * Hybrid retrieval: vector search (pgvector, cosine) and full-text search (each chunk stemmed in
- * its own language, ranked by how many distinct question terms it contains) are fused with
+ * its own language, ranked by how many distinct question terms it contains) are fused with weighted
  * reciprocal rank fusion. The same article usually matches in several languages; only its best
- * chunk is kept, and it is labelled in the answer language.
+ * chunk is kept, and it is labelled in the answer language. Recitals are down-weighted so that the
+ * binding article ranks above the recital that explains it.
+ * <p>
+ * The weights come from {@link AskProperties}; the defaults were chosen with the benchmark, which
+ * found that full-text search did not help on paraphrased questions (its weight is 0 by default).
  */
 @Component
 class HybridRetrieval implements Retrieval {
@@ -27,7 +31,7 @@ class HybridRetrieval implements Retrieval {
 			           row_number() OVER (ORDER BY embedding <=> :vec) AS rank
 			    FROM chunk
 			    ORDER BY embedding <=> :vec
-			    LIMIT :candidates
+			    LIMIT :vectorCandidates
 			), text_hits AS (
 			    -- Distinct question terms matched first, then term density.
 			    SELECT celex, lang, unit_id, chunk_index, NULL::float8 AS similarity,
@@ -40,28 +44,40 @@ class HybridRetrieval implements Retrieval {
 			                  WHERE lexeme = ANY (lexemes)) coverage
 			    WHERE tsv @@ q
 			    ORDER BY rank
-			    LIMIT :candidates
+			    LIMIT :textCandidates
 			), fused AS (
+			    -- Weighted reciprocal rank fusion, per chunk.
 			    SELECT celex, lang, unit_id, chunk_index,
-			           sum(1.0 / (:rrfK + rank)) AS score, max(similarity) AS similarity
-			    FROM (SELECT * FROM vector_hits UNION ALL SELECT * FROM text_hits) hits
+			           sum(weight / (:rrfK + rank)) AS score, max(similarity) AS similarity
+			    FROM (SELECT *, 1.0 AS weight FROM vector_hits
+			          UNION ALL SELECT *, :textWeight AS weight FROM text_hits) hits
 			    GROUP BY celex, lang, unit_id, chunk_index
-			), best_per_unit AS (
+			), best_chunk AS (
+			    -- The chunk shown and cited for each unit.
 			    SELECT DISTINCT ON (celex, unit_id) *
 			    FROM fused
 			    ORDER BY celex, unit_id, score DESC
+			), unit_scores AS (
+			    -- A unit's score: its best language, or all its languages added up; recitals weighted.
+			    SELECT celex, unit_id,
+			           (CASE WHEN :sumLanguages THEN sum(lang_score) ELSE max(lang_score) END)
+			           * (CASE WHEN starts_with(unit_id, 'rct_') THEN :recitalWeight ELSE 1.0 END) AS score
+			    FROM (SELECT celex, unit_id, lang, max(score) AS lang_score
+			          FROM fused GROUP BY celex, unit_id, lang) per_language
+			    GROUP BY celex, unit_id
 			)
-			SELECT b.celex, b.unit_id, b.lang AS matched_lang, b.score, b.similarity, c.content,
+			SELECT b.celex, b.unit_id, b.lang AS matched_lang, u.score, b.similarity, c.content,
 			       d.short_name,
 			       coalesce(answer.label, matched.label) AS label,
 			       coalesce(answer.heading, matched.heading) AS heading,
 			       coalesce(answer.url, matched.url) AS url
-			FROM best_per_unit b
+			FROM unit_scores u
+			JOIN best_chunk b USING (celex, unit_id)
 			JOIN chunk c USING (celex, lang, unit_id, chunk_index)
 			JOIN source_document d USING (celex)
 			JOIN source_unit matched ON matched.celex = b.celex AND matched.lang = b.lang AND matched.unit_id = b.unit_id
 			LEFT JOIN source_unit answer ON answer.celex = b.celex AND answer.lang = :answerLang AND answer.unit_id = b.unit_id
-			ORDER BY b.score DESC
+			ORDER BY u.score DESC
 			LIMIT :limit
 			""";
 
@@ -80,13 +96,25 @@ class HybridRetrieval implements Retrieval {
 	}
 
 	@Override
-	public Result search(String question, String answerLang, int limit) {
+	public Result search(String question, String answerLang, int limit, Options options) {
+		Mode mode = options.mode() == null ? Mode.HYBRID : options.mode();
+		double textWeight = options.textWeight() == null ? this.properties.textWeight() : options.textWeight();
+		double recitalWeight = options.recitalWeight() == null ? this.properties.recitalWeight()
+				: options.recitalWeight();
+		boolean sumLanguages = options.sumLanguages() == null ? this.properties.sumLanguages()
+				: options.sumLanguages();
 		PGvector vec = new PGvector(this.embeddingModel.embed(question));
+		int candidates = this.properties.candidates();
 		List<Source> sources = this.jdbc.sql(SEARCH)
 			.param("vec", vec)
 			.param("question", question)
-			.param("candidates", this.properties.candidates())
+			.param("vectorCandidates", mode == Mode.TEXT ? 0 : candidates)
+			// A zero text weight would only add zero scores: skip the full-text search entirely.
+			.param("textCandidates", mode == Mode.VECTOR || (mode == Mode.HYBRID && textWeight == 0) ? 0 : candidates)
 			.param("rrfK", RRF_K)
+			.param("textWeight", textWeight)
+			.param("recitalWeight", recitalWeight)
+			.param("sumLanguages", sumLanguages)
 			.param("answerLang", answerLang)
 			.param("limit", limit)
 			.query((rs, rowNum) -> new Source(rs.getString("celex"), rs.getString("unit_id"),

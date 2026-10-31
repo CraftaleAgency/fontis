@@ -15,6 +15,21 @@ European language and get answers that cite the exact source — with data and m
 - **AI Act–ready.** AI disclosure, answer logs and visible sources are built in, not bolted on.
 - **Measured.** A public, multilingual benchmark shows how well it works — and on your own documents too.
 
+## Benchmark v1
+
+90 questions in five languages on the AI Act, GDPR, Data Act and NIS2, with `qwen3:14b` and `bge-m3`
+on a single RTX 3060:
+
+| | |
+|---|---|
+| Gold article ranked first | **79%** — up from 40% with the first ranking |
+| Answers citing the gold article | 81% |
+| Answers correct / correct or partial (LLM judge) | 59% / 95% |
+| Unanswerable questions refused | **15 / 15** |
+| Gold articles found through a text in another language | 35% |
+
+What the benchmark found and how it changed the ranking: [findings](docs/benchmark/v1-findings.md).
+
 ## Architecture
 
 | Part | Technology |
@@ -67,7 +82,7 @@ corpus cannot answer gets `NO_SOURCE` or `NO_ANSWER` instead of a guess. See [an
 
 ```
 backend/   Spring Boot service: ingestion, retrieval, answers
-bench/     Python: corpus tooling and multilingual benchmark
+bench/     Python: corpus tooling, benchmark dataset and evaluation
 docs/      Roadmap, data sources, design notes
 ```
 

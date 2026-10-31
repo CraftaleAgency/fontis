@@ -31,13 +31,19 @@ measure retrieval separately from generation.
 ## Retrieval
 
 1. **Vector search**: the 40 chunks closest to the question embedding (`bge-m3`, cosine, HNSW).
-2. **Full-text search**: the 40 best chunks for the question as an OR query, each chunk stemmed
-   with its own language. Chunks are ranked by **how many distinct question terms** they contain,
-   then by term density, so that a frequent generic term ("AI" in the AI Act) cannot outrank a
-   chunk matching several terms of the question.
-3. **Reciprocal rank fusion** (k = 60) merges both lists.
+2. **Full-text search** (optional): the 40 best chunks for the question as an OR query, each chunk
+   stemmed with its own language, ranked by **how many distinct question terms** they contain, then
+   by term density.
+3. **Weighted reciprocal rank fusion** (k = 60) merges both lists.
 4. **One result per unit**: an article usually matches in several languages; only its best chunk is
    kept, and it is labelled and linked in the requested language.
+5. **Recitals × 0.6**, so the binding article ranks above the recital that explains it.
+
+The weights come from the [benchmark](benchmark/v1-findings.md): equal-weight fusion ranked the
+gold article first for 40% of the questions, vector search with down-weighted recitals for 79%.
+Full-text search did not help on paraphrased questions, so its weight is 0 by default
+(`fontis.ask.text-weight`) and the search is skipped; `GET /api/search` accepts `mode`,
+`textWeight`, `recitalWeight` and `sumLanguages` to compare settings.
 
 ## Refusing instead of guessing
 

@@ -40,11 +40,41 @@ class HybridRetrievalTests {
 	}
 
 	@Test
-	void fullTextMatchRanksTheRightArticleFirst() {
+	void defaultRankingFindsTheRightArticleFirst() {
 		List<Source> sources = this.retrieval.search("Which AI practices are prohibited?", "eng", 5).sources();
 
 		assertThat(sources.get(0).unitId()).isEqualTo("art_5");
+	}
+
+	@Test
+	void fusionWithFullTextRanksTheRightArticleFirst() {
+		List<Source> sources = this.retrieval
+			.search("Which AI practices are prohibited?", "eng", 5,
+					new Retrieval.Options(Retrieval.Mode.HYBRID, 1.0, 1.0, false))
+			.sources();
+
+		assertThat(sources.get(0).unitId()).isEqualTo("art_5");
 		assertThat(sources.get(0).title()).isEqualTo("AI Act — Article 5 — Prohibited AI practices");
+	}
+
+	@Test
+	void singleModesUseOnlyTheirOwnSearch() {
+		// Vector-only results all carry a similarity; text-only results never do.
+		assertThat(this.retrieval
+			.search("Which AI practices are prohibited?", "eng", 5, Retrieval.Options.of(Retrieval.Mode.VECTOR))
+			.sources()).isNotEmpty().allSatisfy(s -> assertThat(s.similarity()).isNotNull());
+		assertThat(this.retrieval
+			.search("Which AI practices are prohibited?", "eng", 5, Retrieval.Options.of(Retrieval.Mode.TEXT))
+			.sources()).isNotEmpty().allSatisfy(s -> assertThat(s.similarity()).isNull());
+	}
+
+	@Test
+	void recitalWeightZeroPushesRecitalsBelowArticles() {
+		List<Source> sources = this.retrieval
+			.search("purpose of this Regulation internal market", "eng", 5,
+					new Retrieval.Options(Retrieval.Mode.HYBRID, null, 0.0, null))
+			.sources();
+		assertThat(sources.get(0).unitId()).doesNotStartWith("rct_");
 	}
 
 	@Test
