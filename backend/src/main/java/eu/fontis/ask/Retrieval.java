@@ -18,6 +18,14 @@ public interface Retrieval {
 	}
 
 	/**
+	 * The sources with the text to give the model, at most {@code budgetChars} characters each.
+	 * By default each source keeps its best chunk.
+	 */
+	default List<Source> contexts(List<Source> sources, int budgetChars) {
+		return sources;
+	}
+
+	/**
 	 * Overrides for evaluation. {@code null} means "use the configured value".
 	 *
 	 * @param mode which searches to run

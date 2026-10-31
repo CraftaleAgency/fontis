@@ -38,6 +38,9 @@ fontis:
     min-similarity: 0.45
     # Context window for the chat model; sources plus answer fit well within it.
     num-ctx: 8192
+    # Characters of each source given to the model, from several chunks of the article: 6 × 2,400
+    # stays within num-ctx, so the chat and embedding models still fit together on a 12 GB GPU.
+    max-source-chars: 2400
     # Ranking weights, chosen with the v1 benchmark (docs/benchmark/v1.md): down-weighting recitals
     # brought Hit@1 from 68% to 79%; full-text search did not help on paraphrased questions, so it is
     # off by default (a weight of 0 skips it) and kept as an option.

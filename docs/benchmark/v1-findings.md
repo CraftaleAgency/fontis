@@ -1,6 +1,7 @@
 # Benchmark v1 — findings
 
-Full numbers: [v1 report](v1.md) · [ranking settings](v1-tuning.md) · method and limits: [README](README.md).
+Full numbers: [v1 report](v1.md) · [v1.1 report](v1.1.md) · [ranking settings](v1-tuning.md) ·
+method and limits: [README](README.md).
 
 ## Headline
 
@@ -64,10 +65,31 @@ called (`NO_SOURCE`), 5 by the model itself (`NO_ANSWER`). No answerable questio
 Manual review of the four *incorrect* verdicts: three are real errors (the NIS2 case above), one is a
 judge error. The raw verdicts with the judge's reasons are kept for this kind of check.
 
+## v1.1 — several chunks per source
+
+The fix for the NIS2 error: each source now gives the model up to 2,400 characters of its article —
+the retrieved chunks first, then their neighbours, put back in reading order with `[…]` where text
+is skipped — instead of the single best chunk. Same questions, same judge, same retrieval:
+
+| | v1 | v1.1 |
+|---|---:|---:|
+| Answers judged correct | 59% (44) | **67% (50)** |
+| Correct or partial | 95% | 97% |
+| Incorrect | 4 | 2 |
+| NIS2 fine for essential entities | 2 / 5 correct | **5 / 5 correct** |
+| Answers citing the gold article | 81% | 79% |
+| Generation time, median | 6.0 s | 7.3 s |
+
+Longer sources cost about 1.3 s per answer. Other questions moved too: GDPR legal bases (0 → 3
+correct) and Data Act switching (0 → 1) gained from seeing more of their article. Two answers
+became incorrect: the Spanish answer on deployer obligations, where retrieval ranks the providers'
+article first (a known retrieval miss), and the French answer on the GDPR maximum fine, which
+claims the GDPR sets no maximum — with 15 questions per language, a single answer moves a
+language's score by 7 points.
+
 ## Next steps
 
-1. Give the model **every retrieved chunk of a source article**, not just the best one — the fix
-   for the NIS2 error.
+1. ~~Give the model every retrieved chunk of a source article~~ — done in v1.1.
 2. Improve German retrieval; try `Qwen3-Embedding` against `bge-m3`.
 3. Dataset v2: 150 questions with a held-out part, exact-reference questions (article numbers,
    acronyms) to re-test full-text search, and questions whose answer spans two regulations.

@@ -17,13 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AnswerServiceTests {
 
-	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1.0, 1.0, false);
+	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1.0, 1.0, false, 2400);
 
 	private static final List<Source> SOURCES = List.of(
 			new Source("32016R0679", "art_17", "GDPR", "Articolo 17", "Diritto alla cancellazione", "url17", "deu",
-					"Die betroffene Person hat das Recht ...", 0.03, 0.70),
+					"Die betroffene Person hat das Recht ...", 0.03, 0.70, List.of(0)),
 			new Source("32016R0679", "rct_65", "GDPR", "(65)", null, "url65", "ita", "Un interessato dovrebbe ...",
-					0.02, 0.66));
+					0.02, 0.66, List.of(0)));
 
 	private final List<Prompt> prompts = new ArrayList<>();
 

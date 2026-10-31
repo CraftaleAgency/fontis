@@ -49,7 +49,8 @@ Full-text search did not help on paraphrased questions, so its weight is 0 by de
 
 - If the closest chunk has a cosine similarity below **0.45**, the response is `NO_SOURCE` and the
   model is not called.
-- Otherwise the model receives up to six numbered sources and must end every factual sentence with
+- Otherwise the model receives up to six numbered sources — each up to 2,400 characters of its
+  article, not just the best chunk — and must end every factual sentence with
   `[n]`, use nothing else, and reply `NO_ANSWER` when the sources do not contain the answer.
 - Citation markers that point to no source are dropped; an answer with none is `UNCITED`.
 

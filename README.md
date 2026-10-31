@@ -23,8 +23,8 @@ on a single RTX 3060:
 | | |
 |---|---|
 | Gold article ranked first | **79%** — up from 40% with the first ranking |
-| Answers citing the gold article | 81% |
-| Answers correct / correct or partial (LLM judge) | 59% / 95% |
+| Answers citing the gold article | 79% |
+| Answers correct / correct or partial (LLM judge) | **67%** / 97% — up from 59% with several chunks per source |
 | Unanswerable questions refused | **15 / 15** |
 | Gold articles found through a text in another language | 35% |
 

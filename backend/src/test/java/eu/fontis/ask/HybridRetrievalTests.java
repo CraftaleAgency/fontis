@@ -89,6 +89,22 @@ class HybridRetrievalTests {
 	}
 
 	@Test
+	void contextsGiveTheModelSeveralChunksOfALongArticle() {
+		Source art16 = this.retrieval.search("obligations of providers of high-risk AI systems", "eng", 5)
+			.sources()
+			.stream()
+			.filter(s -> s.unitId().equals("art_16"))
+			.findFirst()
+			.orElseThrow();
+
+		String context = this.retrieval.contexts(List.of(art16), 10_000).get(0).content();
+
+		// art_16 (~3,500 characters) is split into several chunks; with room for all, the model gets all.
+		assertThat(context.length()).isGreaterThan(art16.content().length());
+		assertThat(context).startsWith("1. Providers").contains("5. Providers");
+	}
+
+	@Test
 	void unitsMissingInTheAnswerLanguageFallBackToTheMatchedLanguage() {
 		// art_16 exists only in English in the fixture.
 		Source art16 = this.retrieval.search("obligations of providers of high-risk AI systems", "ita", 5)

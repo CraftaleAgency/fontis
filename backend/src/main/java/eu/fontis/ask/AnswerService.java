@@ -74,10 +74,13 @@ public class AnswerService {
 			return new AskResponse(question, Status.NO_SOURCE, null, List.of(), numbered, null, retrievalMs, 0);
 		}
 
+		// Several chunks per source, not just the best: the answer may be in another part of the article.
+		List<Source> withContext = this.retrieval.contexts(sources, this.properties.maxSourceChars());
+
 		start = System.nanoTime();
 		String raw = this.chatClient.prompt()
 			.options(OllamaChatOptions.builder().disableThinking().numCtx(this.properties.numCtx()))
-			.user(userPrompt(question, sources))
+			.user(userPrompt(question, withContext))
 			.call()
 			.content();
 		long generationMs = (System.nanoTime() - start) / 1_000_000;

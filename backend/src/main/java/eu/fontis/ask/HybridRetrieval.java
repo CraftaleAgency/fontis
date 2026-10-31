@@ -1,6 +1,8 @@
 package eu.fontis.ask;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.pgvector.PGvector;
 
@@ -67,6 +69,8 @@ class HybridRetrieval implements Retrieval {
 			    GROUP BY celex, unit_id
 			)
 			SELECT b.celex, b.unit_id, b.lang AS matched_lang, u.score, b.similarity, c.content,
+			       (SELECT array_agg(f.chunk_index ORDER BY f.score DESC) FROM fused f
+			        WHERE f.celex = b.celex AND f.unit_id = b.unit_id AND f.lang = b.lang) AS retrieved_chunks,
 			       d.short_name,
 			       coalesce(answer.label, matched.label) AS label,
 			       coalesce(answer.heading, matched.heading) AS heading,
@@ -83,6 +87,11 @@ class HybridRetrieval implements Retrieval {
 
 	private static final String BEST_SIMILARITY = "SELECT 1 - min(embedding <=> :vec) FROM chunk";
 
+	private static final String UNIT_CHUNKS = """
+			SELECT chunk_index, content FROM chunk
+			WHERE celex = :celex AND lang = :lang AND unit_id = :unitId
+			""";
+
 	private final EmbeddingModel embeddingModel;
 
 	private final JdbcClient jdbc;
@@ -93,6 +102,21 @@ class HybridRetrieval implements Retrieval {
 		this.embeddingModel = embeddingModel;
 		this.jdbc = jdbc;
 		this.properties = properties;
+	}
+
+	@Override
+	public List<Source> contexts(List<Source> sources, int budgetChars) {
+		return sources.stream().map(source -> {
+			Map<Integer, String> chunks = new HashMap<>();
+			this.jdbc.sql(UNIT_CHUNKS)
+				.param("celex", source.celex())
+				.param("lang", source.matchedLang())
+				.param("unitId", source.unitId())
+				.query(rs -> {
+					chunks.put(rs.getInt("chunk_index"), rs.getString("content"));
+				});
+			return source.withContent(SourceContext.assemble(chunks, source.retrievedChunks(), budgetChars));
+		}).toList();
 	}
 
 	@Override
@@ -120,7 +144,7 @@ class HybridRetrieval implements Retrieval {
 			.query((rs, rowNum) -> new Source(rs.getString("celex"), rs.getString("unit_id"),
 					rs.getString("short_name"), rs.getString("label"), rs.getString("heading"), rs.getString("url"),
 					rs.getString("matched_lang"), rs.getString("content"), rs.getDouble("score"),
-					(Double) rs.getObject("similarity")))
+					(Double) rs.getObject("similarity"), SourceContext.parseIndexes(rs.getArray("retrieved_chunks"))))
 			.list();
 		Double best = this.jdbc.sql(BEST_SIMILARITY).param("vec", vec).query(Double.class).optional().orElse(0.0);
 		return new Result(sources, best);

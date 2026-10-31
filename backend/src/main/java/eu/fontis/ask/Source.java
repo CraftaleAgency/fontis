@@ -1,5 +1,7 @@
 package eu.fontis.ask;
 
+import java.util.List;
+
 /**
  * A unit retrieved for a question. Label, heading and URL are in the language requested for the
  * answer; {@code matchedLang} and {@code content} are those of the chunk that actually matched.
@@ -14,9 +16,16 @@ package eu.fontis.ask;
  * @param content text of the best-matching chunk
  * @param score fused rank score (reciprocal rank fusion)
  * @param similarity cosine similarity of the best chunk, or {@code null} if it matched only by full text
+ * @param retrievedChunks indexes of the unit's chunks found by retrieval in {@code matchedLang}, best first
  */
 public record Source(String celex, String unitId, String document, String label, String heading, String url,
-		String matchedLang, String content, double score, Double similarity) {
+		String matchedLang, String content, double score, Double similarity, List<Integer> retrievedChunks) {
+
+	/** The same source with another text, e.g. several chunks of the unit instead of the best one. */
+	public Source withContent(String newContent) {
+		return new Source(this.celex, this.unitId, this.document, this.label, this.heading, this.url,
+				this.matchedLang, newContent, this.score, this.similarity, this.retrievedChunks);
+	}
 
 	/** One line naming the source, e.g. "GDPR — Articolo 17 — Diritto alla cancellazione". */
 	public String title() {
