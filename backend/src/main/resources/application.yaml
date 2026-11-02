@@ -48,6 +48,11 @@ fontis:
     recital-weight: 0.6
     sum-languages: false
 
+  log:
+    # Answer log entries are deleted after this many days (questions may contain personal data).
+    retention-days: ${FONTIS_LOG_RETENTION_DAYS:30}
+    cleanup-cron: "0 30 3 * * *"
+
 management:
   endpoints:
     web:

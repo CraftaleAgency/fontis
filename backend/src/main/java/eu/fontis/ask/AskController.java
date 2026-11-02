@@ -3,6 +3,7 @@ package eu.fontis.ask;
 import java.util.List;
 import java.util.Set;
 
+import eu.fontis.log.AnswerLog;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -26,12 +27,15 @@ class AskController {
 
 	private final AnswerService answerService;
 
+	private final AnswerLog answerLog;
+
 	private final Retrieval retrieval;
 
 	private final AskProperties properties;
 
-	AskController(AnswerService answerService, Retrieval retrieval, AskProperties properties) {
+	AskController(AnswerService answerService, AnswerLog answerLog, Retrieval retrieval, AskProperties properties) {
 		this.answerService = answerService;
+		this.answerLog = answerLog;
 		this.retrieval = retrieval;
 		this.properties = properties;
 	}
@@ -45,7 +49,10 @@ class AskController {
 
 	@PostMapping("/ask")
 	AskResponse ask(@Valid @RequestBody AskRequest request) {
-		return this.answerService.ask(request.question().strip(), language(request.lang()));
+		String lang = language(request.lang());
+		AskResponse response = this.answerService.ask(request.question().strip(), lang);
+		this.answerLog.record(response, lang);
+		return response;
 	}
 
 	/** Retrieval only, without generation: used by the benchmark to measure retrieval quality. */

@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+/* One accent (institutional blue) on neutral greys; dark mode follows the system. */
+:root {
+  --background: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #171b22;
+  --muted: #5d6573;
+  --line: #e2e5ea;
+  --accent: #2343b0;
+  --accent-soft: #eaeefb;
+  --warn: #8a5a00;
+  --warn-soft: #fdf5e3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f1115;
+    --surface: #171a20;
+    --ink: #e8eaee;
+    --muted: #9aa2b1;
+    --line: #2a2f38;
+    --accent: #8ea6ff;
+    --accent-soft: #1d2440;
+    --warn: #f0c060;
+    --warn-soft: #2c2412;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}

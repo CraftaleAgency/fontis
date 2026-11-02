@@ -5,6 +5,8 @@ European language and get answers that cite the exact source — with data and m
 
 > 🚧 Early development — see the [roadmap](docs/roadmap.md).
 
+![Fontis answering in Italian, citing AI Act Article 5 found in the French text](docs/images/ask-it.png)
+
 ## Why
 
 - **Cited or nothing.** Every answer points to the article, paragraph and document it comes from.
@@ -37,6 +39,7 @@ What the benchmark found and how it changed the ranking: [findings](docs/benchma
 | Backend and ingestion | Java 21, Spring Boot 4, Spring AI 2, Spring Batch |
 | Retrieval | PostgreSQL 17 + pgvector, hybrid vector and full-text search |
 | Models | Ollama (e.g. `qwen3:14b`, `bge-m3`); Mistral as EU cloud option (planned) |
+| Web app | Next.js 16, React 19, Tailwind CSS — English, Italian, German, French, Spanish |
 | Benchmark and data tooling | Python 3.12, uv |
 
 ## Demo corpus
@@ -78,10 +81,21 @@ curl -X POST localhost:8080/api/ask -H 'Content-Type: application/json' \
 The answer cites AI Act **Articolo 5** — found in the French text, linked in Italian. A question the
 corpus cannot answer gets `NO_SOURCE` or `NO_ANSWER` instead of a guess. See [answering](docs/answering.md).
 
+## Web app
+
+```bash
+cd frontend && npm install && npm run dev   # http://localhost:3000
+```
+
+AI disclosure on every page, an "AI-generated" label on every answer, clickable citations to
+EUR-Lex, explicit refusals, and an answer log kept for 30 days without IP addresses or user
+identifiers — see [transparency](docs/transparency.md).
+
 ## Repository layout
 
 ```
-backend/   Spring Boot service: ingestion, retrieval, answers
+backend/   Spring Boot service: ingestion, retrieval, answers, answer log
+frontend/  Next.js web app in five languages
 bench/     Python: corpus tooling, benchmark dataset and evaluation
 docs/      Roadmap, data sources, design notes
 ```
