@@ -5,13 +5,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 
-import eu.fontis.corpus.Chunker;
+import eu.fontis.ingest.ChunkEmbedder.UnitOfDocument;
 import eu.fontis.corpus.CorpusUnit;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.PropertyNamingStrategies;
 import tools.jackson.databind.json.JsonMapper;
 
-import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.configuration.annotation.StepScope;
@@ -44,8 +43,6 @@ import org.springframework.transaction.PlatformTransactionManager;
  */
 @Configuration(proxyBeanMethods = false)
 class IngestJobConfig {
-
-	static final int MAX_CHUNK_CHARS = 1200;
 
 	// The corpus JSONL uses snake_case keys (unit_id, unit_type).
 	private static final JsonMapper JSON = JsonMapper.builder()
@@ -142,24 +139,19 @@ class IngestJobConfig {
 
 	@Bean
 	Step chunksStep(JobRepository jobRepository, PlatformTransactionManager tx,
-			JdbcCursorItemReader<UnitWithDocument> unitsWithoutChunksReader, EmbeddingModel embeddingModel,
-			JdbcTemplate jdbc, @Value("${fontis.ingest.units-per-batch}") int unitsPerBatch) {
-		Chunker chunker = new Chunker(MAX_CHUNK_CHARS);
-		return new StepBuilder("chunksStep", jobRepository).<UnitWithDocument, UnitChunks>chunk(unitsPerBatch)
+			JdbcCursorItemReader<UnitOfDocument> unitsWithoutChunksReader, ChunkEmbedder embedder,
+			@Value("${fontis.ingest.units-per-batch}") int unitsPerBatch) {
+		return new StepBuilder("chunksStep", jobRepository).<UnitOfDocument, UnitChunks>chunk(unitsPerBatch)
 			.reader(unitsWithoutChunksReader)
-			.processor(item -> new UnitChunks(item.unit(), Chunker.header(item.documentName(), item.unit()),
-					chunker.split(item.unit().body())))
-			.writer(new EmbeddingChunkWriter(embeddingModel, jdbc))
+			.processor(embedder::split)
+			.writer(items -> embedder.write(items.getItems()))
 			.transactionManager(tx)
 			.build();
 	}
 
-	record UnitWithDocument(CorpusUnit unit, String documentName) {
-	}
-
 	@Bean
-	JdbcCursorItemReader<UnitWithDocument> unitsWithoutChunksReader(javax.sql.DataSource dataSource) {
-		return new JdbcCursorItemReaderBuilder<UnitWithDocument>().name("unitsWithoutChunksReader")
+	JdbcCursorItemReader<UnitOfDocument> unitsWithoutChunksReader(javax.sql.DataSource dataSource) {
+		return new JdbcCursorItemReaderBuilder<UnitOfDocument>().name("unitsWithoutChunksReader")
 			.dataSource(dataSource)
 			.sql("""
 					SELECT u.*, d.short_name
@@ -168,7 +160,7 @@ class IngestJobConfig {
 					                  WHERE c.celex = u.celex AND c.lang = u.lang AND c.unit_id = u.unit_id)
 					ORDER BY u.celex, u.lang, u.unit_id
 					""")
-			.rowMapper((rs, rowNum) -> new UnitWithDocument(new CorpusUnit(rs.getString("celex"),
+			.rowMapper((rs, rowNum) -> new UnitOfDocument(new CorpusUnit(rs.getString("celex"),
 					rs.getString("lang"), rs.getString("unit_id"), rs.getString("unit_type"), rs.getString("label"),
 					rs.getString("heading"), rs.getString("body"), rs.getString("url")), rs.getString("short_name")))
 			.build();

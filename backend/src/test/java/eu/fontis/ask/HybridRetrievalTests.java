@@ -50,7 +50,7 @@ class HybridRetrievalTests {
 	void fusionWithFullTextRanksTheRightArticleFirst() {
 		List<Source> sources = this.retrieval
 			.search("Which AI practices are prohibited?", "eng", 5,
-					new Retrieval.Options(Retrieval.Mode.HYBRID, 1.0, 1.0, false))
+					new Retrieval.Options(Retrieval.Mode.HYBRID, 1.0, 1.0, false, null))
 			.sources();
 
 		assertThat(sources.get(0).unitId()).isEqualTo("art_5");
@@ -72,7 +72,7 @@ class HybridRetrievalTests {
 	void recitalWeightZeroPushesRecitalsBelowArticles() {
 		List<Source> sources = this.retrieval
 			.search("purpose of this Regulation internal market", "eng", 5,
-					new Retrieval.Options(Retrieval.Mode.HYBRID, null, 0.0, null))
+					new Retrieval.Options(Retrieval.Mode.HYBRID, null, 0.0, null, null))
 			.sources();
 		assertThat(sources.get(0).unitId()).doesNotStartWith("rct_");
 	}

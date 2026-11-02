@@ -14,6 +14,8 @@ European language and get answers that cite the exact source — with data and m
 - **Multilingual by design.** Ask in Italian, find the answer in a German document, read it in Italian.
 - **Sovereign.** Runs on your own servers or on EU clouds, with local open-weight models or an EU provider
   (Mistral). Documents never have to leave the EU.
+- **Your documents, your rules.** Upload PDFs and Word files; share each one with groups. A document a
+  user may not read is filtered out inside retrieval, so it never reaches the model.
 - **AI Act–ready.** AI disclosure, answer logs and visible sources are built in, not bolted on.
 - **Measured.** A public, multilingual benchmark shows how well it works — and on your own documents too.
 
@@ -36,7 +38,8 @@ What the benchmark found and how it changed the ranking: [findings](docs/benchma
 
 | Part | Technology |
 |---|---|
-| Backend and ingestion | Java 21, Spring Boot 4, Spring AI 2, Spring Batch |
+| Backend and ingestion | Java 21, Spring Boot 4, Spring AI 2, Spring Batch, Spring Security |
+| Document reading | Spring AI PDF reader (pages) and Apache Tika (Word, ODT, HTML, text) |
 | Retrieval | PostgreSQL 17 + pgvector, hybrid vector and full-text search |
 | Models | Ollama (e.g. `qwen3:14b`, `bge-m3`); Mistral as EU cloud option (planned) |
 | Web app | Next.js 16, React 19, Tailwind CSS — English, Italian, German, French, Spanish |
@@ -90,6 +93,10 @@ cd frontend && npm install && npm run dev   # http://localhost:3000
 AI disclosure on every page, an "AI-generated" label on every answer, clickable citations to
 EUR-Lex, explicit refusals, and an answer log kept for 30 days without IP addresses or user
 identifiers — see [transparency](docs/transparency.md).
+
+Start the backend with `FONTIS_ADMIN_EMAIL` and `FONTIS_ADMIN_PASSWORD` to create the first
+administrator, who can upload documents, share them with groups and add users — see
+[documents and access](docs/documents-and-access.md).
 
 ## Repository layout
 

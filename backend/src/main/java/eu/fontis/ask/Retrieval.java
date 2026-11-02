@@ -32,13 +32,18 @@ public interface Retrieval {
 	 * @param textWeight weight of full-text ranks in the fusion (vector ranks weigh 1)
 	 * @param recitalWeight multiplier for recitals, which explain articles but are not binding
 	 * @param sumLanguages add up a unit's scores across languages instead of keeping the best
+	 * @param access documents the search may return; {@code null} means every document
 	 */
-	record Options(Mode mode, Double textWeight, Double recitalWeight, Boolean sumLanguages) {
+	record Options(Mode mode, Double textWeight, Double recitalWeight, Boolean sumLanguages, Access access) {
 
-		public static final Options DEFAULTS = new Options(Mode.HYBRID, null, null, null);
+		public static final Options DEFAULTS = new Options(Mode.HYBRID, null, null, null, null);
 
 		public static Options of(Mode mode) {
-			return new Options(mode, null, null, null);
+			return new Options(mode, null, null, null, null);
+		}
+
+		public static Options of(Access access) {
+			return new Options(Mode.HYBRID, null, null, null, access);
 		}
 
 	}

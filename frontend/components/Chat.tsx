@@ -174,16 +174,23 @@ function Answer({ turnId, response, locale }: { turnId: number; response: AskRes
 
 function Source({ id, citation, locale }: { id: string; citation: Citation; locale: Locale }) {
   const t = dictionaries[locale];
-  const otherLanguage = citation.matchedLang !== backendLang[locale];
+  // Uploaded documents have a single language: only EU legislation is matched across languages.
+  const otherLanguage = Boolean(citation.url) && citation.matchedLang !== backendLang[locale];
   return (
     <li id={id} className="flex scroll-mt-24 gap-3 text-sm target:rounded-md target:bg-accent-soft">
       <span className="mt-0.5 font-mono text-xs text-accent">[{citation.n}]</span>
       <div>
-        <a href={citation.url} target="_blank" rel="noreferrer" className="font-medium hover:text-accent hover:underline">
-          {citation.document} — {sourceLabel(citation, t.recital)}
-          {citation.heading ? ` — ${citation.heading}` : ""}
-          <span aria-hidden> ↗</span>
-        </a>
+        {citation.url ? (
+          <a href={citation.url} target="_blank" rel="noreferrer" className="font-medium hover:text-accent hover:underline">
+            {citation.document} — {sourceLabel(citation, t.recital)}
+            {citation.heading ? ` — ${citation.heading}` : ""}
+            <span aria-hidden> ↗</span>
+          </a>
+        ) : (
+          <span className="font-medium">
+            {citation.document} — {citation.label}
+          </span>
+        )}
         {otherLanguage && (
           <p className="text-xs text-muted">{t.foundIn(corpusLanguageName(locale, citation.matchedLang))}</p>
         )}

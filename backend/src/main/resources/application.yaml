@@ -5,9 +5,17 @@ spring:
     url: ${FONTIS_DB_URL:jdbc:postgresql://localhost:5432/fontis}
     username: ${FONTIS_DB_USER:fontis}
     password: ${FONTIS_DB_PASSWORD:fontis}
+    hikari:
+      # With a document filter, keep scanning the HNSW index until enough allowed chunks are found
+      # (pgvector >= 0.8) instead of returning fewer results.
+      connection-init-sql: SET hnsw.iterative_scan = strict_order
   batch:
     job:
       enabled: false
+  servlet:
+    multipart:
+      max-file-size: 25MB
+      max-request-size: 26MB
   ai:
     model:
       # Local models through Ollama. Mistral (EU provider) will be added for the cloud comparison.
@@ -48,6 +56,13 @@ fontis:
     recital-weight: 0.6
     sum-languages: false
 
+  admin:
+    # First administrator, created at startup when there are no users yet.
+    email: ${FONTIS_ADMIN_EMAIL:}
+    password: ${FONTIS_ADMIN_PASSWORD:}
+  documents:
+    # Uploaded files are split into sections of about this size (PDFs are split into pages).
+    section-chars: 3000
   log:
     # Answer log entries are deleted after this many days (questions may contain personal data).
     retention-days: ${FONTIS_LOG_RETENTION_DAYS:30}

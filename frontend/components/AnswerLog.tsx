@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { recentAnswers, sourceLabel, type LogEntry, type Status } from "@/lib/api";
+import { ApiError, recentAnswers, sourceLabel, type LogEntry, type Status } from "@/lib/api";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
 // Must match fontis.log.retention-days in the backend.
@@ -18,11 +18,12 @@ export default function AnswerLog({ locale }: { locale: Locale }) {
   const t = dictionaries[locale];
   const [entries, setEntries] = useState<LogEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
 
   useEffect(() => {
     recentAnswers(100)
       .then(setEntries)
-      .catch(() => setFailed(true));
+      .catch((error) => (error instanceof ApiError && error.status < 404 ? setForbidden(true) : setFailed(true)));
   }, []);
 
   const when = new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" });
@@ -32,6 +33,7 @@ export default function AnswerLog({ locale }: { locale: Locale }) {
       <h1 className="text-2xl font-semibold tracking-tight">{t.log.title}</h1>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">{t.log.intro(RETENTION_DAYS)}</p>
 
+      {forbidden && <p className="mt-6 text-sm text-muted">{t.auth.adminOnly}</p>}
       {failed && <p className="mt-6 text-sm text-warn">{t.error}</p>}
       {entries?.length === 0 && <p className="mt-6 text-sm text-muted">{t.log.empty}</p>}
 
@@ -59,7 +61,7 @@ export default function AnswerLog({ locale }: { locale: Locale }) {
                   </td>
                   <td className="px-4 py-2.5 text-xs">
                     {entry.citations.map((c) => (
-                      <a key={c.n} href={c.url} target="_blank" rel="noreferrer" className="block whitespace-nowrap hover:text-accent hover:underline">
+                      <a key={c.n} href={c.url || undefined} target="_blank" rel="noreferrer" className="block whitespace-nowrap hover:text-accent hover:underline">
                         {c.document} {sourceLabel(c, t.recital)}
                       </a>
                     ))}

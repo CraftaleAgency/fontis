@@ -27,8 +27,8 @@ public class AnswerService {
 	static final String NO_ANSWER = "NO_ANSWER";
 
 	static final String SYSTEM_PROMPT = """
-			You are Fontis, an assistant that answers questions about EU legislation using ONLY the numbered \
-			sources provided by the user.
+			You are Fontis, an assistant that answers questions about EU legislation and the organisation's \
+			documents using ONLY the numbered sources provided by the user.
 
 			Rules:
 			- Answer in the same language as the question.
@@ -60,9 +60,13 @@ public class AnswerService {
 		this.modelName = modelName;
 	}
 
-	public AskResponse ask(String question, String answerLang) {
+	/**
+	 * @param access the documents this question may draw on
+	 */
+	public AskResponse ask(String question, String answerLang, Access access) {
 		long start = System.nanoTime();
-		Retrieval.Result result = this.retrieval.search(question, answerLang, this.properties.maxSources());
+		Retrieval.Result result = this.retrieval.search(question, answerLang, this.properties.maxSources(),
+				Retrieval.Options.of(access));
 		long retrievalMs = (System.nanoTime() - start) / 1_000_000;
 
 		List<Source> sources = result.sources();

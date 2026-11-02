@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import time
 from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
@@ -67,6 +68,17 @@ def _request(client: httpx.Client, method: str, url: str, attempts: int = 3, **k
     raise AssertionError("unreachable")
 
 
+@contextmanager
+def api_client(api: str, timeout: float) -> Iterator[httpx.Client]:
+    """Client for the Fontis API: fetches the CSRF cookie and sends it back as a header on every request."""
+    with httpx.Client(base_url=api, timeout=timeout) as client:
+        client.get("/api/auth/me")
+        token = client.cookies.get("XSRF-TOKEN")
+        if token:
+            client.headers["X-XSRF-TOKEN"] = token
+        yield client
+
+
 def read_jsonl(path: Path) -> Iterator[dict]:
     if path.exists():
         yield from (json.loads(line) for line in path.open(encoding="utf-8") if line.strip())
@@ -76,7 +88,7 @@ def run_retrieval(questions: list[dict], api: str, run_dir: Path) -> int:
     out = run_dir / "retrieval.jsonl"
     done = _done_ids(out, lambda r: f"{r['id']}|{r['mode']}")
     count = 0
-    with httpx.Client(base_url=api, timeout=120) as client:
+    with api_client(api, timeout=120) as client:
         for q in questions:
             for mode in MODES:
                 if f"{q['id']}|{mode}" in done:
@@ -108,7 +120,7 @@ def run_answers(questions: list[dict], api: str, run_dir: Path) -> int:
     out = run_dir / "answers.jsonl"
     done = _done_ids(out, lambda r: r["id"])
     count = 0
-    with httpx.Client(base_url=api, timeout=600) as client:
+    with api_client(api, timeout=600) as client:
         for q in questions:
             if q["id"] in done:
                 continue
@@ -178,7 +190,7 @@ def run_tuning(questions: list[dict], api: str, run_dir: Path, grid: list[dict] 
     out = run_dir / "tuning.jsonl"
     done = _done_ids(out, lambda r: f"{r['id']}|{r['config']}")
     count = 0
-    with httpx.Client(base_url=api, timeout=120) as client:
+    with api_client(api, timeout=120) as client:
         for config in grid:
             key = config_key(config)
             for q in questions:

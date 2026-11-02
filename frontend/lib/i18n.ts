@@ -60,6 +60,45 @@ export type Dictionary = {
     model: string;
   };
   status: Record<"ANSWERED" | "NO_SOURCE" | "NO_ANSWER" | "UNCITED", string>;
+  auth: {
+    signIn: string;
+    signOut: string;
+    email: string;
+    password: string;
+    wrong: string;
+    adminOnly: string;
+  };
+  docs: {
+    nav: string;
+    title: string;
+    intro: string;
+    upload: string;
+    file: string;
+    docTitle: string;
+    language: string;
+    visibility: string;
+    public: string;
+    restricted: string;
+    groups: string;
+    groupsHint: string;
+    uploading: string;
+    uploaded: (title: string, units: number) => string;
+    delete: string;
+    confirmDelete: string;
+    euLaw: string;
+    units: (n: number) => string;
+  };
+  users: {
+    nav: string;
+    title: string;
+    create: string;
+    name: string;
+    role: string;
+    admin: string;
+    user: string;
+    passwordHint: string;
+    created: (email: string) => string;
+  };
 };
 
 const footerEn =
@@ -103,6 +142,45 @@ export const dictionaries: Record<Locale, Dictionary> = {
       model: "Model",
     },
     status: { ANSWERED: "Answered", NO_SOURCE: "No source", NO_ANSWER: "No answer", UNCITED: "Uncited" },
+    auth: {
+      signIn: "Sign in",
+      signOut: "Sign out",
+      email: "Email",
+      password: "Password",
+      wrong: "Wrong email or password.",
+      adminOnly: "Only administrators can see this page. Sign in with an administrator account.",
+    },
+    docs: {
+      nav: "Documents",
+      title: "Documents",
+      intro: "The EU legislation is searchable by everyone. Uploaded documents are searched only by the groups they are shared with, and by administrators.",
+      upload: "Upload a document",
+      file: "File (PDF, Word, text — max 25 MB)",
+      docTitle: "Title",
+      language: "Language of the document",
+      visibility: "Who can search it",
+      public: "Everyone",
+      restricted: "Only these groups",
+      groups: "Groups",
+      groupsHint: "Comma-separated, e.g. legal, hr",
+      uploading: "Reading and indexing the document…",
+      uploaded: (title, units) => `"${title}" added: ${units} pages or sections indexed.`,
+      delete: "Delete",
+      confirmDelete: "Confirm delete",
+      euLaw: "EU legislation",
+      units: (n) => `${n} units`,
+    },
+    users: {
+      nav: "Users",
+      title: "Users",
+      create: "Add a user",
+      name: "Name",
+      role: "Role",
+      admin: "Administrator",
+      user: "User",
+      passwordHint: "At least 12 characters",
+      created: (email) => `${email} added.`,
+    },
   },
   it: {
     tagline: "Risposte sulla normativa UE, con la fonte esatta",
@@ -142,6 +220,45 @@ export const dictionaries: Record<Locale, Dictionary> = {
       model: "Modello",
     },
     status: { ANSWERED: "Risposta", NO_SOURCE: "Nessuna fonte", NO_ANSWER: "Nessuna risposta", UNCITED: "Senza citazioni" },
+    auth: {
+      signIn: "Accedi",
+      signOut: "Esci",
+      email: "Email",
+      password: "Password",
+      wrong: "Email o password errate.",
+      adminOnly: "Solo gli amministratori possono vedere questa pagina. Accedi con un account amministratore.",
+    },
+    docs: {
+      nav: "Documenti",
+      title: "Documenti",
+      intro: "La normativa UE è consultabile da tutti. I documenti caricati vengono cercati solo dai gruppi con cui sono condivisi e dagli amministratori.",
+      upload: "Carica un documento",
+      file: "File (PDF, Word, testo — max 25 MB)",
+      docTitle: "Titolo",
+      language: "Lingua del documento",
+      visibility: "Chi può consultarlo",
+      public: "Tutti",
+      restricted: "Solo questi gruppi",
+      groups: "Gruppi",
+      groupsHint: "Separati da virgole, es. legale, hr",
+      uploading: "Lettura e indicizzazione del documento…",
+      uploaded: (title, units) => `«${title}» aggiunto: ${units} pagine o sezioni indicizzate.`,
+      delete: "Elimina",
+      confirmDelete: "Conferma eliminazione",
+      euLaw: "Normativa UE",
+      units: (n) => `${n} unità`,
+    },
+    users: {
+      nav: "Utenti",
+      title: "Utenti",
+      create: "Aggiungi un utente",
+      name: "Nome",
+      role: "Ruolo",
+      admin: "Amministratore",
+      user: "Utente",
+      passwordHint: "Almeno 12 caratteri",
+      created: (email) => `${email} aggiunto.`,
+    },
   },
   de: {
     tagline: "Antworten zum EU-Recht, mit der genauen Quelle",
@@ -181,6 +298,45 @@ export const dictionaries: Record<Locale, Dictionary> = {
       model: "Modell",
     },
     status: { ANSWERED: "Beantwortet", NO_SOURCE: "Keine Quelle", NO_ANSWER: "Keine Antwort", UNCITED: "Ohne Zitat" },
+    auth: {
+      signIn: "Anmelden",
+      signOut: "Abmelden",
+      email: "E-Mail",
+      password: "Passwort",
+      wrong: "E-Mail oder Passwort falsch.",
+      adminOnly: "Nur Administratoren können diese Seite sehen. Melden Sie sich mit einem Administratorkonto an.",
+    },
+    docs: {
+      nav: "Dokumente",
+      title: "Dokumente",
+      intro: "Das EU-Recht ist für alle durchsuchbar. Hochgeladene Dokumente werden nur von den Gruppen durchsucht, für die sie freigegeben sind, und von Administratoren.",
+      upload: "Dokument hochladen",
+      file: "Datei (PDF, Word, Text — max. 25 MB)",
+      docTitle: "Titel",
+      language: "Sprache des Dokuments",
+      visibility: "Wer darf es durchsuchen",
+      public: "Alle",
+      restricted: "Nur diese Gruppen",
+      groups: "Gruppen",
+      groupsHint: "Durch Kommas getrennt, z. B. recht, personal",
+      uploading: "Dokument wird gelesen und indexiert…",
+      uploaded: (title, units) => `„${title}" hinzugefügt: ${units} Seiten oder Abschnitte indexiert.`,
+      delete: "Löschen",
+      confirmDelete: "Löschen bestätigen",
+      euLaw: "EU-Recht",
+      units: (n) => `${n} Einheiten`,
+    },
+    users: {
+      nav: "Benutzer",
+      title: "Benutzer",
+      create: "Benutzer hinzufügen",
+      name: "Name",
+      role: "Rolle",
+      admin: "Administrator",
+      user: "Benutzer",
+      passwordHint: "Mindestens 12 Zeichen",
+      created: (email) => `${email} hinzugefügt.`,
+    },
   },
   fr: {
     tagline: "Des réponses sur le droit de l'UE, avec la source exacte",
@@ -220,6 +376,45 @@ export const dictionaries: Record<Locale, Dictionary> = {
       model: "Modèle",
     },
     status: { ANSWERED: "Répondu", NO_SOURCE: "Aucune source", NO_ANSWER: "Pas de réponse", UNCITED: "Sans citation" },
+    auth: {
+      signIn: "Se connecter",
+      signOut: "Se déconnecter",
+      email: "E-mail",
+      password: "Mot de passe",
+      wrong: "E-mail ou mot de passe incorrect.",
+      adminOnly: "Seuls les administrateurs peuvent voir cette page. Connectez-vous avec un compte administrateur.",
+    },
+    docs: {
+      nav: "Documents",
+      title: "Documents",
+      intro: "La législation de l'UE est consultable par tous. Les documents importés ne sont consultés que par les groupes avec lesquels ils sont partagés, et par les administrateurs.",
+      upload: "Importer un document",
+      file: "Fichier (PDF, Word, texte — 25 Mo max.)",
+      docTitle: "Titre",
+      language: "Langue du document",
+      visibility: "Qui peut le consulter",
+      public: "Tout le monde",
+      restricted: "Seulement ces groupes",
+      groups: "Groupes",
+      groupsHint: "Séparés par des virgules, ex. juridique, rh",
+      uploading: "Lecture et indexation du document…",
+      uploaded: (title, units) => `« ${title} » ajouté : ${units} pages ou sections indexées.`,
+      delete: "Supprimer",
+      confirmDelete: "Confirmer la suppression",
+      euLaw: "Législation de l'UE",
+      units: (n) => `${n} unités`,
+    },
+    users: {
+      nav: "Utilisateurs",
+      title: "Utilisateurs",
+      create: "Ajouter un utilisateur",
+      name: "Nom",
+      role: "Rôle",
+      admin: "Administrateur",
+      user: "Utilisateur",
+      passwordHint: "Au moins 12 caractères",
+      created: (email) => `${email} ajouté.`,
+    },
   },
   es: {
     tagline: "Respuestas sobre la legislación de la UE, con la fuente exacta",
@@ -259,5 +454,44 @@ export const dictionaries: Record<Locale, Dictionary> = {
       model: "Modelo",
     },
     status: { ANSWERED: "Respondida", NO_SOURCE: "Sin fuente", NO_ANSWER: "Sin respuesta", UNCITED: "Sin citas" },
+    auth: {
+      signIn: "Iniciar sesión",
+      signOut: "Cerrar sesión",
+      email: "Correo electrónico",
+      password: "Contraseña",
+      wrong: "Correo o contraseña incorrectos.",
+      adminOnly: "Solo los administradores pueden ver esta página. Inicie sesión con una cuenta de administrador.",
+    },
+    docs: {
+      nav: "Documentos",
+      title: "Documentos",
+      intro: "La legislación de la UE puede consultarla cualquiera. Los documentos subidos solo los consultan los grupos con los que se comparten y los administradores.",
+      upload: "Subir un documento",
+      file: "Archivo (PDF, Word, texto — máx. 25 MB)",
+      docTitle: "Título",
+      language: "Idioma del documento",
+      visibility: "Quién puede consultarlo",
+      public: "Todos",
+      restricted: "Solo estos grupos",
+      groups: "Grupos",
+      groupsHint: "Separados por comas, p. ej. legal, rrhh",
+      uploading: "Leyendo e indexando el documento…",
+      uploaded: (title, units) => `«${title}» añadido: ${units} páginas o secciones indexadas.`,
+      delete: "Eliminar",
+      confirmDelete: "Confirmar eliminación",
+      euLaw: "Legislación de la UE",
+      units: (n) => `${n} unidades`,
+    },
+    users: {
+      nav: "Usuarios",
+      title: "Usuarios",
+      create: "Añadir un usuario",
+      name: "Nombre",
+      role: "Rol",
+      admin: "Administrador",
+      user: "Usuario",
+      passwordHint: "Al menos 12 caracteres",
+      created: (email) => `${email} añadido.`,
+    },
   },
 };

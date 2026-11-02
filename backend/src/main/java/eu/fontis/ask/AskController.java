@@ -3,12 +3,14 @@ package eu.fontis.ask;
 import java.util.List;
 import java.util.Set;
 
+import eu.fontis.documents.DocumentAccess;
 import eu.fontis.log.AnswerLog;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,13 +31,17 @@ class AskController {
 
 	private final AnswerLog answerLog;
 
+	private final DocumentAccess documentAccess;
+
 	private final Retrieval retrieval;
 
 	private final AskProperties properties;
 
-	AskController(AnswerService answerService, AnswerLog answerLog, Retrieval retrieval, AskProperties properties) {
+	AskController(AnswerService answerService, AnswerLog answerLog, DocumentAccess documentAccess,
+			Retrieval retrieval, AskProperties properties) {
 		this.answerService = answerService;
 		this.answerLog = answerLog;
+		this.documentAccess = documentAccess;
 		this.retrieval = retrieval;
 		this.properties = properties;
 	}
@@ -48,9 +54,10 @@ class AskController {
 	}
 
 	@PostMapping("/ask")
-	AskResponse ask(@Valid @RequestBody AskRequest request) {
+	AskResponse ask(@Valid @RequestBody AskRequest request, Authentication authentication) {
 		String lang = language(request.lang());
-		AskResponse response = this.answerService.ask(request.question().strip(), lang);
+		AskResponse response = this.answerService.ask(request.question().strip(), lang,
+				this.documentAccess.of(authentication));
 		this.answerLog.record(response, lang);
 		return response;
 	}
@@ -61,9 +68,10 @@ class AskController {
 			@RequestParam(required = false) String lang, @RequestParam(required = false) Integer limit,
 			@RequestParam(defaultValue = "HYBRID") Retrieval.Mode mode,
 			@RequestParam(required = false) Double textWeight, @RequestParam(required = false) Double recitalWeight,
-			@RequestParam(required = false) Boolean sumLanguages) {
+			@RequestParam(required = false) Boolean sumLanguages, Authentication authentication) {
 		int n = limit == null ? this.properties.maxSources() : Math.clamp(limit, 1, 50);
-		var options = new Retrieval.Options(mode, textWeight, recitalWeight, sumLanguages);
+		var options = new Retrieval.Options(mode, textWeight, recitalWeight, sumLanguages,
+				this.documentAccess.of(authentication));
 		return this.retrieval.search(q.strip(), language(lang), n, options).sources();
 	}
 

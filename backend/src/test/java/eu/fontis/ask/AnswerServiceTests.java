@@ -30,7 +30,7 @@ class AnswerServiceTests {
 	@Test
 	void citedAnswerKeepsOnlyCitedSourcesInOrder() {
 		AskResponse response = service(0.70, "Sì, puoi chiederne la cancellazione [1]. Vale anche online [2][1].")
-			.ask("Posso far cancellare i miei dati?", "ita");
+			.ask("Posso far cancellare i miei dati?", "ita", Access.EVERYTHING);
 
 		assertThat(response.status()).isEqualTo(Status.ANSWERED);
 		assertThat(response.citations()).extracting(AskResponse.Citation::unitId).containsExactly("art_17", "rct_65");
@@ -40,7 +40,7 @@ class AnswerServiceTests {
 
 	@Test
 	void promptNumbersSourcesWithTitlesInTheAnswerLanguage() {
-		service(0.70, "Sì [1].").ask("Posso far cancellare i miei dati?", "ita");
+		service(0.70, "Sì [1].").ask("Posso far cancellare i miei dati?", "ita", Access.EVERYTHING);
 
 		String user = this.prompts.get(0).getUserMessage().getText();
 		assertThat(user).contains("[1] GDPR — Articolo 17 — Diritto alla cancellazione\nDie betroffene Person")
@@ -50,7 +50,7 @@ class AnswerServiceTests {
 
 	@Test
 	void lowSimilarityRefusesWithoutCallingTheModel() {
-		AskResponse response = service(0.30, "should not be called").ask("Chi ha vinto i mondiali del 2006?", "ita");
+		AskResponse response = service(0.30, "should not be called").ask("Chi ha vinto i mondiali del 2006?", "ita", Access.EVERYTHING);
 
 		assertThat(response.status()).isEqualTo(Status.NO_SOURCE);
 		assertThat(response.answer()).isNull();
@@ -59,7 +59,7 @@ class AnswerServiceTests {
 
 	@Test
 	void modelRefusalIsReportedAsNoAnswer() {
-		AskResponse response = service(0.70, "NO_ANSWER").ask("Quanto costa una licenza?", "ita");
+		AskResponse response = service(0.70, "NO_ANSWER").ask("Quanto costa una licenza?", "ita", Access.EVERYTHING);
 
 		assertThat(response.status()).isEqualTo(Status.NO_ANSWER);
 		assertThat(response.citations()).isEmpty();
@@ -67,7 +67,7 @@ class AnswerServiceTests {
 
 	@Test
 	void answerWithoutCitationsIsFlaggedAsUncited() {
-		AskResponse response = service(0.70, "Sì, puoi.").ask("Posso far cancellare i miei dati?", "ita");
+		AskResponse response = service(0.70, "Sì, puoi.").ask("Posso far cancellare i miei dati?", "ita", Access.EVERYTHING);
 
 		assertThat(response.status()).isEqualTo(Status.UNCITED);
 	}
@@ -75,7 +75,7 @@ class AnswerServiceTests {
 	@Test
 	void reasoningBlocksAndOutOfRangeCitationsAreIgnored() {
 		AskResponse response = service(0.70, "<think>let me check [2]</think>\nSì [1][9].")
-			.ask("Posso far cancellare i miei dati?", "ita");
+			.ask("Posso far cancellare i miei dati?", "ita", Access.EVERYTHING);
 
 		assertThat(response.answer()).isEqualTo("Sì [1][9].");
 		assertThat(response.citations()).extracting(AskResponse.Citation::n).containsExactly(1);

@@ -30,8 +30,7 @@ Because questions may contain personal data:
 
 - **no IP address, user identifier or session** is stored;
 - entries are **deleted after 30 days** (`fontis.log.retention-days`) by a nightly job;
-- the log page is open in this demo; in week 6, users and permissions will restrict it to
-  administrators.
+- only administrators can read it (see [documents and access](documents-and-access.md)).
 
 ## Sovereignty
 

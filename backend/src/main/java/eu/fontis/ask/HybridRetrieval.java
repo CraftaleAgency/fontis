@@ -32,6 +32,7 @@ class HybridRetrieval implements Retrieval {
 			           1 - (embedding <=> :vec) AS similarity,
 			           row_number() OVER (ORDER BY embedding <=> :vec) AS rank
 			    FROM chunk
+			    WHERE (:allDocuments OR celex = ANY (:documents))
 			    ORDER BY embedding <=> :vec
 			    LIMIT :vectorCandidates
 			), text_hits AS (
@@ -44,7 +45,7 @@ class HybridRetrieval implements Retrieval {
 			         LATERAL (SELECT count(*) AS matched
 			                  FROM unnest(tsvector_to_array(tsv)) AS lexeme
 			                  WHERE lexeme = ANY (lexemes)) coverage
-			    WHERE tsv @@ q
+			    WHERE tsv @@ q AND (:allDocuments OR celex = ANY (:documents))
 			    ORDER BY rank
 			    LIMIT :textCandidates
 			), fused AS (
@@ -85,7 +86,11 @@ class HybridRetrieval implements Retrieval {
 			LIMIT :limit
 			""";
 
-	private static final String BEST_SIMILARITY = "SELECT 1 - min(embedding <=> :vec) FROM chunk";
+	private static final String BEST_SIMILARITY = """
+			SELECT 1 - (embedding <=> :vec) FROM chunk
+			WHERE (:allDocuments OR celex = ANY (:documents))
+			ORDER BY embedding <=> :vec LIMIT 1
+			""";
 
 	private static final String UNIT_CHUNKS = """
 			SELECT chunk_index, content FROM chunk
@@ -127,6 +132,8 @@ class HybridRetrieval implements Retrieval {
 				: options.recitalWeight();
 		boolean sumLanguages = options.sumLanguages() == null ? this.properties.sumLanguages()
 				: options.sumLanguages();
+		Access access = options.access() == null ? Access.EVERYTHING : options.access();
+		String[] documents = access.documents().toArray(String[]::new);
 		PGvector vec = new PGvector(this.embeddingModel.embed(question));
 		int candidates = this.properties.candidates();
 		List<Source> sources = this.jdbc.sql(SEARCH)
@@ -141,12 +148,20 @@ class HybridRetrieval implements Retrieval {
 			.param("sumLanguages", sumLanguages)
 			.param("answerLang", answerLang)
 			.param("limit", limit)
+			.param("allDocuments", access.all())
+			.param("documents", documents)
 			.query((rs, rowNum) -> new Source(rs.getString("celex"), rs.getString("unit_id"),
 					rs.getString("short_name"), rs.getString("label"), rs.getString("heading"), rs.getString("url"),
 					rs.getString("matched_lang"), rs.getString("content"), rs.getDouble("score"),
 					(Double) rs.getObject("similarity"), SourceContext.parseIndexes(rs.getArray("retrieved_chunks"))))
 			.list();
-		Double best = this.jdbc.sql(BEST_SIMILARITY).param("vec", vec).query(Double.class).optional().orElse(0.0);
+		Double best = this.jdbc.sql(BEST_SIMILARITY)
+			.param("vec", vec)
+			.param("allDocuments", access.all())
+			.param("documents", documents)
+			.query(Double.class)
+			.optional()
+			.orElse(0.0);
 		return new Result(sources, best);
 	}
 
