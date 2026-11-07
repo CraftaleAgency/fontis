@@ -1,0 +1,146 @@
+# Fontis production stack for a single server (Hetzner, Scaleway, OVH...): see docs/deployment.md.
+#
+#   cp .env.example .env    # then edit it
+#   docker compose up -d --build
+#   ./ingest.sh             # once: download and index the EU legislation
+#
+# Profiles: "monitoring" adds Prometheus and Grafana; "gpu" runs Ollama on this server.
+
+name: fontis
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fontis
+      POSTGRES_USER: fontis
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fontis -d fontis"]
+      interval: 5s
+      retries: 20
+
+  backend:
+    build: ../backend
+    image: fontis-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &backend-env
+      FONTIS_DB_URL: jdbc:postgresql://postgres:5432/fontis
+      FONTIS_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      FONTIS_ADMIN_EMAIL: ${FONTIS_ADMIN_EMAIL:?set FONTIS_ADMIN_EMAIL in .env}
+      FONTIS_ADMIN_PASSWORD: ${FONTIS_ADMIN_PASSWORD:?set FONTIS_ADMIN_PASSWORD in .env}
+      FONTIS_RATE_LIMIT_PER_MINUTE: ${FONTIS_RATE_LIMIT_PER_MINUTE:-20}
+      FONTIS_LOG_RETENTION_DAYS: ${FONTIS_LOG_RETENTION_DAYS:-30}
+      FONTIS_TRACING_ENABLED: ${FONTIS_TRACING_ENABLED:-false}
+      FONTIS_TRACING_SAMPLING: ${FONTIS_TRACING_SAMPLING:-1.0}
+      # The exporter needs a valid URL even when tracing is off.
+      FONTIS_OTLP_ENDPOINT: ${FONTIS_OTLP_ENDPOINT:-http://localhost:4318/v1/traces}
+      FONTIS_OTLP_AUTHORIZATION: ${FONTIS_OTLP_AUTHORIZATION:-}
+      FONTIS_TRACING_CAPTURE_CONTENT: ${FONTIS_TRACING_CAPTURE_CONTENT:-false}
+      FONTIS_ENVIRONMENT: ${FONTIS_ENVIRONMENT:-production}
+    extra_hosts:
+      # Lets OLLAMA_BASE_URL point at a model server on the host itself.
+      - host.docker.internal:host-gateway
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        FONTIS_API_URL: http://backend:8080
+    image: fontis-frontend
+    restart: unless-stopped
+    depends_on: [backend]
+
+  # The only public entry point: HTTPS with automatic certificates for FONTIS_DOMAIN.
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [frontend]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      FONTIS_DOMAIN: ${FONTIS_DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+
+  # One-off jobs, run by ingest.sh.
+  corpus:
+    profiles: [jobs]
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    working_dir: /bench
+    environment:
+      UV_PROJECT_ENVIRONMENT: /tmp/venv
+    volumes:
+      - ../bench:/bench:ro
+      - corpus:/data
+    command: >
+      sh -c "uv run --frozen fontis-bench --data-dir /data corpus fetch
+      && uv run --frozen fontis-bench --data-dir /data corpus build
+      && uv run --frozen fontis-bench --data-dir /data corpus check"
+
+  ingest:
+    profiles: [jobs]
+    image: fontis-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *backend-env
+      SPRING_PROFILES_ACTIVE: ingest
+      FONTIS_CORPUS_DIR: /data/corpus
+    volumes:
+      - corpus:/data:ro
+
+  ollama:
+    profiles: [gpu]
+    image: ollama/ollama
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  prometheus:
+    profiles: [monitoring]
+    image: prom/prometheus:v3.15.1
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus:/prometheus
+
+  grafana:
+    profiles: [monitoring]
+    image: grafana/grafana:12.4.14
+    restart: unless-stopped
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change-me}
+    # Not public: reach it through an SSH tunnel or a VPN (see docs/deployment.md).
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana:/var/lib/grafana
+
+volumes:
+  postgres:
+  caddy-data:
+  corpus:
+  ollama:
+  prometheus:
+  grafana:

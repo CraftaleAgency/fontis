@@ -1,9 +1,12 @@
 import type { NextConfig } from "next";
 
 // The browser talks only to Next.js; /api/* is forwarded to the Spring Boot backend.
+// Read at build time: the Docker image is built with FONTIS_API_URL=http://backend:8080.
 const backend = process.env.FONTIS_API_URL ?? "http://localhost:8080";
 
 const nextConfig: NextConfig = {
+  // Self-contained server for the Docker image (frontend/Dockerfile).
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   devIndicators: false,

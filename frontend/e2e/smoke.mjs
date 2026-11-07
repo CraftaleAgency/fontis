@@ -1,5 +1,6 @@
 // Smoke test of the running stack (web app, backend, models), using the installed Chrome.
 // Usage: FONTIS_WEB_URL=http://localhost:3000 FONTIS_ADMIN_EMAIL=... FONTIS_ADMIN_PASSWORD=... node e2e/smoke.mjs [screenshot-dir]
+// Against the Docker stack: FONTIS_WEB_URL=https://localhost FONTIS_INSECURE_TLS=1 ...
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +12,11 @@ const alice = { email: `alice.${Date.now()}@example.eu`, password: "alice-passwo
 const out = process.argv[2];
 
 const browser = await chromium.launch({ channel: "chrome" });
-const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+// FONTIS_INSECURE_TLS=1 accepts the self-signed certificate Caddy uses for "localhost".
+const page = await browser.newPage({
+  viewport: { width: 1200, height: 900 },
+  ignoreHTTPSErrors: process.env.FONTIS_INSECURE_TLS === "1",
+});
 const check = (ok, message) => {
   if (!ok) throw new Error(message);
   console.log(`✓ ${message}`);

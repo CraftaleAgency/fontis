@@ -13,11 +13,12 @@ __pycache__/
 .ruff_cache/
 
 # Environment and secrets
-.env
-.env.*
+# Also catches names with stray characters, like ".env ".
+.env*
 
 # IDE / OS
 .idea/
 .vscode/
 *.iml
 .DS_Store
+!.env.example

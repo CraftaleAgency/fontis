@@ -47,6 +47,7 @@ export type Dictionary = {
   noAnswer: string;
   uncited: string;
   error: string;
+  tooMany: string;
   timing: (retrievalMs: number, generationMs: number, model: string | null) => string;
   footer: string;
   log: {
@@ -128,6 +129,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noAnswer: "The sources found do not contain the answer to this question.",
     uncited: "This answer cites no source and should not be relied on.",
     error: "Something went wrong. Please try again.",
+    tooMany: "Too many questions in a short time. Please wait a minute and try again.",
     timing: (r, g, m) => `Search ${r} ms · answer ${g} ms${m ? ` · ${m}` : ""}`,
     footer: footerEn,
     log: {
@@ -205,6 +207,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noAnswer: "Le fonti trovate non contengono la risposta a questa domanda.",
     uncited: "Questa risposta non cita fonti e non è affidabile.",
     error: "Si è verificato un errore. Riprova.",
+    tooMany: "Troppe domande in poco tempo. Attendi un minuto e riprova.",
     timing: (r, g, m) => `Ricerca ${r} ms · risposta ${g} ms${m ? ` · ${m}` : ""}`,
     footer:
       "Corpus: AI Act, GDPR, Data Act e NIS2 da EUR-Lex, © Unione europea. Fa fede solo la Gazzetta ufficiale dell'UE.",
@@ -283,6 +286,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noAnswer: "Die gefundenen Quellen enthalten keine Antwort auf diese Frage.",
     uncited: "Diese Antwort zitiert keine Quelle und ist nicht verlässlich.",
     error: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
+    tooMany: "Zu viele Fragen in kurzer Zeit. Bitte warten Sie eine Minute.",
     timing: (r, g, m) => `Suche ${r} ms · Antwort ${g} ms${m ? ` · ${m}` : ""}`,
     footer:
       "Korpus: KI-Verordnung, DSGVO, Data Act und NIS2 aus EUR-Lex, © Europäische Union. Verbindlich ist nur das Amtsblatt der EU.",
@@ -361,6 +365,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noAnswer: "Les sources trouvées ne contiennent pas la réponse à cette question.",
     uncited: "Cette réponse ne cite aucune source et n'est pas fiable.",
     error: "Une erreur s'est produite. Veuillez réessayer.",
+    tooMany: "Trop de questions en peu de temps. Veuillez patienter une minute.",
     timing: (r, g, m) => `Recherche ${r} ms · réponse ${g} ms${m ? ` · ${m}` : ""}`,
     footer:
       "Corpus : AI Act, RGPD, Data Act et NIS2 issus d'EUR-Lex, © Union européenne. Seul le Journal officiel de l'UE fait foi.",
@@ -439,6 +444,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noAnswer: "Las fuentes encontradas no contienen la respuesta a esta pregunta.",
     uncited: "Esta respuesta no cita ninguna fuente y no es fiable.",
     error: "Se ha producido un error. Inténtelo de nuevo.",
+    tooMany: "Demasiadas preguntas en poco tiempo. Espere un minuto e inténtelo de nuevo.",
     timing: (r, g, m) => `Búsqueda ${r} ms · respuesta ${g} ms${m ? ` · ${m}` : ""}`,
     footer:
       "Corpus: AI Act, RGPD, Data Act y NIS2 de EUR-Lex, © Unión Europea. Solo el Diario Oficial de la UE es auténtico.",

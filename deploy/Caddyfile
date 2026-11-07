@@ -1,0 +1,16 @@
+# Public entry point. With a real domain Caddy obtains and renews HTTPS certificates itself.
+{$FONTIS_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+	# Answers can take up to a few minutes while a model loads.
+	reverse_proxy frontend:3000 {
+		transport http {
+			read_timeout 180s
+		}
+	}
+}

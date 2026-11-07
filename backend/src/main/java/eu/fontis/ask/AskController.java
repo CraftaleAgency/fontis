@@ -5,6 +5,9 @@ import java.util.Set;
 
 import eu.fontis.documents.DocumentAccess;
 import eu.fontis.log.AnswerLog;
+import eu.fontis.security.Users;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -33,17 +36,30 @@ class AskController {
 
 	private final DocumentAccess documentAccess;
 
+	private final AnswerMetrics metrics;
+
+	private final AskRateLimiter rateLimiter;
+
 	private final Retrieval retrieval;
 
 	private final AskProperties properties;
 
+	private final AskTracing tracing;
+
+	private final Users users;
+
 	AskController(AnswerService answerService, AnswerLog answerLog, DocumentAccess documentAccess,
-			Retrieval retrieval, AskProperties properties) {
+			AnswerMetrics metrics, AskRateLimiter rateLimiter, Retrieval retrieval, AskProperties properties,
+			AskTracing tracing, Users users) {
 		this.answerService = answerService;
 		this.answerLog = answerLog;
 		this.documentAccess = documentAccess;
+		this.metrics = metrics;
+		this.rateLimiter = rateLimiter;
 		this.retrieval = retrieval;
 		this.properties = properties;
+		this.tracing = tracing;
+		this.users = users;
 	}
 
 	/**
@@ -54,11 +70,19 @@ class AskController {
 	}
 
 	@PostMapping("/ask")
-	AskResponse ask(@Valid @RequestBody AskRequest request, Authentication authentication) {
+	AskResponse ask(@Valid @RequestBody AskRequest request, Authentication authentication,
+			HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+		// Behind the proxies, getRemoteAddr() is the client address (server.forward-headers-strategy).
+		if (!this.rateLimiter.tryAcquire(httpRequest.getRemoteAddr())) {
+			httpResponse.setHeader("Retry-After", String.valueOf(this.rateLimiter.retryAfterSeconds()));
+			throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many questions, try again shortly");
+		}
 		String lang = language(request.lang());
-		AskResponse response = this.answerService.ask(request.question().strip(), lang,
-				this.documentAccess.of(authentication));
+		String question = request.question().strip();
+		AskResponse response = this.tracing.answer(question, lang, userId(authentication),
+				() -> this.answerService.ask(question, lang, this.documentAccess.of(authentication)));
 		this.answerLog.record(response, lang);
+		this.metrics.record(response, lang);
 		return response;
 	}
 
@@ -73,6 +97,13 @@ class AskController {
 		var options = new Retrieval.Options(mode, textWeight, recitalWeight, sumLanguages,
 				this.documentAccess.of(authentication));
 		return this.retrieval.search(q.strip(), language(lang), n, options).sources();
+	}
+
+	private Long userId(Authentication authentication) {
+		if (!DocumentAccess.signedIn(authentication)) {
+			return null;
+		}
+		return this.users.findByEmail(authentication.getName()).map(Users.User::id).orElse(null);
 	}
 
 	private static String language(String lang) {

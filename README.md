@@ -98,12 +98,24 @@ Start the backend with `FONTIS_ADMIN_EMAIL` and `FONTIS_ADMIN_PASSWORD` to creat
 administrator, who can upload documents, share them with groups and add users — see
 [documents and access](docs/documents-and-access.md).
 
+## Deploy
+
+One Docker Compose stack (Caddy with HTTPS, web app, backend, Postgres + pgvector, optional Ollama
+on a GPU) for any EU server, with Prometheus and a Grafana dashboard, and per-question traces in
+Langfuse — see [deployment](docs/deployment.md) and [observability](docs/observability.md).
+
+```bash
+cd deploy && cp .env.example .env    # domain, passwords, model server
+docker compose up -d --build && ./ingest.sh
+```
+
 ## Repository layout
 
 ```
 backend/   Spring Boot service: ingestion, retrieval, answers, answer log
 frontend/  Next.js web app in five languages
 bench/     Python: corpus tooling, benchmark dataset and evaluation
+deploy/    Docker Compose stack, Caddy, Prometheus and Grafana
 docs/      Roadmap, data sources, design notes
 ```
 

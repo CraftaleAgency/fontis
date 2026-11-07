@@ -41,7 +41,7 @@ public class DocumentAccess {
 		return Access.only(this.jdbc.sql(VISIBLE).param("userId", userId).query(String.class).list());
 	}
 
-	static boolean signedIn(Authentication authentication) {
+	public static boolean signedIn(Authentication authentication) {
 		return authentication != null && authentication.isAuthenticated()
 				&& !"anonymousUser".equals(authentication.getName());
 	}

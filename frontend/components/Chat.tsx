@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ask, sourceLabel, splitCitations, type AskResponse, type Citation } from "@/lib/api";
+import { ApiError, ask, sourceLabel, splitCitations, type AskResponse, type Citation } from "@/lib/api";
 import { backendLang, corpusLanguageName, dictionaries, type Locale } from "@/lib/i18n";
 
-type Turn = { id: number; question: string; response?: AskResponse; failed?: boolean };
+type Turn = { id: number; question: string; response?: AskResponse; failed?: "error" | "tooMany" };
 
 export default function Chat({ locale }: { locale: Locale }) {
   const t = dictionaries[locale];
@@ -30,8 +30,9 @@ export default function Chat({ locale }: { locale: Locale }) {
     try {
       const response = await ask(text, backendLang[locale]);
       setTurns((current) => current.map((turn) => (turn.id === id ? { ...turn, response } : turn)));
-    } catch {
-      setTurns((current) => current.map((turn) => (turn.id === id ? { ...turn, failed: true } : turn)));
+    } catch (error) {
+      const failed = error instanceof ApiError && error.status === 429 ? "tooMany" : "error";
+      setTurns((current) => current.map((turn) => (turn.id === id ? { ...turn, failed } : turn)));
     } finally {
       setBusy(false);
     }
@@ -66,7 +67,7 @@ export default function Chat({ locale }: { locale: Locale }) {
               {turn.question}
             </p>
             {turn.failed ? (
-              <Notice tone="warn">{t.error}</Notice>
+              <Notice tone="warn">{turn.failed === "tooMany" ? t.tooMany : t.error}</Notice>
             ) : turn.response ? (
               <Answer turnId={turn.id} response={turn.response} locale={locale} />
             ) : (

@@ -3,6 +3,8 @@ package eu.fontis.security;
 import java.util.List;
 
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,11 +34,15 @@ import org.springframework.security.web.context.SecurityContextRepository;
 @Configuration(proxyBeanMethods = false)
 class SecurityConfig {
 
+	// Only in the web application: the ingestion job runs without a web server.
 	@Bean
+	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		return http
 			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/actuator/health/**", "/api/auth/**").permitAll()
+				// Actuator listens on the internal management port only (management.server.port).
+				.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
+				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/ask").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/search", "/api/documents").permitAll()
 				.requestMatchers("/api/log/**", "/api/admin/**").hasRole("ADMIN")

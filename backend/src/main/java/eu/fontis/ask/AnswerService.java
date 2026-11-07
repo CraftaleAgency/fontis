@@ -52,9 +52,12 @@ public class AnswerService {
 
 	private final String modelName;
 
+	private final AskTracing tracing;
+
 	public AnswerService(Retrieval retrieval, ChatClient.Builder chatClientBuilder, AskProperties properties,
-			@Value("${spring.ai.ollama.chat.options.model:unknown}") String modelName) {
+			@Value("${spring.ai.ollama.chat.options.model:unknown}") String modelName, AskTracing tracing) {
 		this.retrieval = retrieval;
+		this.tracing = tracing;
 		this.chatClient = chatClientBuilder.defaultSystem(SYSTEM_PROMPT).build();
 		this.properties = properties;
 		this.modelName = modelName;
@@ -65,8 +68,8 @@ public class AnswerService {
 	 */
 	public AskResponse ask(String question, String answerLang, Access access) {
 		long start = System.nanoTime();
-		Retrieval.Result result = this.retrieval.search(question, answerLang, this.properties.maxSources(),
-				Retrieval.Options.of(access));
+		Retrieval.Result result = this.tracing.retrieve(question, () -> this.retrieval.search(question, answerLang,
+				this.properties.maxSources(), Retrieval.Options.of(access)));
 		long retrievalMs = (System.nanoTime() - start) / 1_000_000;
 
 		List<Source> sources = result.sources();

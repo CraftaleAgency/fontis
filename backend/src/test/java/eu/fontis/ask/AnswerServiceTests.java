@@ -87,7 +87,7 @@ class AnswerServiceTests {
 			this.prompts.add(prompt);
 			return new ChatResponse(List.of(new Generation(new AssistantMessage(modelReply))));
 		};
-		return new AnswerService(retrieval, ChatClient.builder(model), PROPERTIES, "test-model");
+		return new AnswerService(retrieval, ChatClient.builder(model), PROPERTIES, "test-model", AskTracing.NONE);
 	}
 
 }
