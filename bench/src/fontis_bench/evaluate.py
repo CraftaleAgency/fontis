@@ -11,6 +11,7 @@ interrupted and resumed:
 from __future__ import annotations
 
 import json
+import os
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -55,23 +56,30 @@ def _append(path: Path, record: dict) -> None:
 
 
 def _request(client: httpx.Client, method: str, url: str, attempts: int = 3, **kwargs) -> httpx.Response:
-    """Send a request, retrying on timeouts and connection errors (models run on a remote GPU)."""
+    """Send a request, retrying on timeouts, connection errors and server errors (models run on a remote GPU)."""
     for attempt in range(1, attempts + 1):
         try:
             response = client.request(method, url, **kwargs)
             response.raise_for_status()
             return response
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code < 500 or attempt == attempts:
+                raise
         except (httpx.TimeoutException, httpx.NetworkError):
             if attempt == attempts:
                 raise
-            time.sleep(5 * attempt)
+        time.sleep(5 * attempt)
     raise AssertionError("unreachable")
 
 
 @contextmanager
 def api_client(api: str, timeout: float) -> Iterator[httpx.Client]:
-    """Client for the Fontis API: fetches the CSRF cookie and sends it back as a header on every request."""
-    with httpx.Client(base_url=api, timeout=timeout) as client:
+    """Client for the Fontis API: fetches the CSRF cookie and sends it back as a header on every request.
+
+    FONTIS_INSECURE_TLS=1 accepts a self-signed certificate, e.g. the Docker stack on https://localhost.
+    """
+    verify = os.environ.get("FONTIS_INSECURE_TLS") != "1"
+    with httpx.Client(base_url=api, timeout=timeout, verify=verify) as client:
         client.get("/api/auth/me")
         token = client.cookies.get("XSRF-TOKEN")
         if token:

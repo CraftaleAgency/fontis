@@ -92,6 +92,12 @@ class SecurityTests {
 			.content(newUser)).andExpect(status().isCreated()).andExpect(jsonPath("$.groups[0]").value("hr"));
 	}
 
+	@Test
+	void serverErrorsAreNotReportedAsUnauthorized() throws Exception {
+		// The servlet container forwards failed requests to /error, also for anonymous visitors.
+		this.mvc.perform(get("/error")).andExpect(status().isInternalServerError());
+	}
+
 	private MockHttpSession login(String email, String password) throws Exception {
 		return (MockHttpSession) this.mvc
 			.perform(post("/api/auth/login").with(csrf())

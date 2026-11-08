@@ -42,6 +42,8 @@ class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				// Actuator listens on the internal management port only (management.server.port).
 				.requestMatchers(EndpointRequest.toAnyEndpoint()).permitAll()
+				// Error responses: otherwise a server error reaches the client as 401.
+				.requestMatchers("/error").permitAll()
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/ask").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/search", "/api/documents").permitAll()

@@ -3,7 +3,7 @@
 **EU-sovereign document AI with cited answers.** Ask questions about your organisation's documents in any
 European language and get answers that cite the exact source — with data and models under your control.
 
-> 🚧 Early development — see the [roadmap](docs/roadmap.md).
+> First release, v0.1.0 — see the [roadmap](docs/roadmap.md) and the [technical write-up](docs/write-up.md).
 
 ![Fontis answering in Italian, citing AI Act Article 5 found in the French text](docs/images/ask-it.png)
 
@@ -19,20 +19,21 @@ European language and get answers that cite the exact source — with data and m
 - **AI Act–ready.** AI disclosure, answer logs and visible sources are built in, not bolted on.
 - **Measured.** A public, multilingual benchmark shows how well it works — and on your own documents too.
 
-## Benchmark v1
+## Benchmark
 
-90 questions in five languages on the AI Act, GDPR, Data Act and NIS2, with `qwen3:14b` and `bge-m3`
-on a single RTX 3060:
+[**Fontis EU Law QA**](https://huggingface.co/datasets/Fla00/fontis-eu-law-qa), on Hugging Face:
+150 questions in five languages on the AI Act, GDPR, Data Act and NIS2, 30 of which should be
+refused. With `qwen3:14b` and `bge-m3` on a single RTX 3060:
 
 | | |
 |---|---|
-| Gold article ranked first | **79%** — up from 40% with the first ranking |
-| Answers citing the gold article | 79% |
-| Answers correct / correct or partial (LLM judge) | **67%** / 97% — up from 59% with several chunks per source |
-| Unanswerable questions refused | **15 / 15** |
-| Gold articles found through a text in another language | 35% |
+| Gold article ranked first / in the top 5 | **78%** / 89% — 76% / 98% on questions never used for tuning |
+| Answers citing the gold article | 88% |
+| Answers correct / correct or partial (LLM judge) | **64%** / 96% |
+| Unanswerable questions refused | **30 / 30** |
 
-What the benchmark found and how it changed the ranking: [findings](docs/benchmark/v1-findings.md).
+What the benchmark found — incomplete lists, comparisons a 14B model gets wrong, and how it shaped
+the ranking: [v2 findings](docs/benchmark/v2-findings.md) · [v1 findings](docs/benchmark/v1-findings.md).
 
 ## Architecture
 
@@ -44,6 +45,7 @@ What the benchmark found and how it changed the ranking: [findings](docs/benchma
 | Models | Ollama (e.g. `qwen3:14b`, `bge-m3`); Mistral as EU cloud option (planned) |
 | Web app | Next.js 16, React 19, Tailwind CSS — English, Italian, German, French, Spanish |
 | Benchmark and data tooling | Python 3.12, uv |
+| Deployment and observability | Docker Compose, Caddy, Prometheus, Grafana, OpenTelemetry → Langfuse |
 
 ## Demo corpus
 

@@ -2,6 +2,22 @@
 
 A multilingual benchmark for retrieval and cited answers on EU legislation.
 
+## Dataset v2
+
+[`bench/datasets/v2.jsonl`](../../bench/datasets/v2.jsonl), also published on Hugging Face as
+[`Fla00/fontis-eu-law-qa`](https://huggingface.co/datasets/Fla00/fontis-eu-law-qa): **150 questions**,
+30 base questions asked in English, Italian, German, French and Spanish. It contains v1 plus:
+
+- 9 new answerable questions, **never used for tuning**: obligations of general-purpose AI
+  providers, AI Act application dates, fundamental rights impact assessment, GDPR consent, child
+  consent and impact assessment, NIS2 security measures, Data Act switching charges, and one
+  question comparing two regulations (GDPR and AI Act fines, two gold articles);
+- 3 new unanswerable questions close to the corpus: the Digital Services Act and the Cyber
+  Resilience Act (not in the corpus) and the amount of a specific GDPR fine (an enforcement
+  decision, not legislation).
+
+Results: [v2 report](v2.md) · [findings](v2-findings.md) · [ranking settings](v2-tuning.md).
+
 ## Dataset v1
 
 [`bench/datasets/v1.jsonl`](../../bench/datasets/v1.jsonl): **90 questions** —
@@ -46,7 +62,7 @@ An LLM judge is a proxy, not ground truth. The raw verdicts and reasons are kept
 
 ```bash
 cd bench
-uv run fontis-bench eval check                  # dataset sanity
+uv run fontis-bench eval check                  # dataset sanity (v2 by default; --dataset, --run)
 uv run fontis-bench eval retrieval              # /api/search in hybrid, vector and text modes
 uv run fontis-bench eval answers                # /api/ask
 uv run fontis-bench eval judge --ollama http://<host>:11434 --model gemma4:12b
@@ -59,8 +75,12 @@ a single 12 GB GPU never has to hold both chat models at once.
 
 ## Limits
 
-- **Small.** 15 answerable questions × 5 languages. Differences of a few points are noise.
-- **Tuned and evaluated on the same questions.** The ranking weights were chosen on this set; v2
-  (150 questions, week 8) will keep a held-out part.
+- **Small.** 24 answerable questions × 5 languages in v2. Differences of a few points are noise.
+- **Partly tuned on.** The ranking weights were chosen on the v1 questions; the 9 new questions of
+  v2 are held out and reported separately in the [findings](v2-findings.md).
+- **Written by the authors of the system**, from the text of the regulations. Independent
+  questions would make a stronger test.
+- **Point in time.** References follow the texts as published in the Official Journal and
+  downloaded from EUR-Lex; later amendments are not reflected.
 - **Strict gold.** Only the article that states the rule counts. A recital explaining the same rule
   is a miss for retrieval metrics, although it may still support a correct answer.

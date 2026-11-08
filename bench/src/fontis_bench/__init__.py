@@ -9,7 +9,7 @@ from . import corpus, dataset, evaluate, report
 # bench/src/fontis_bench/__init__.py -> repository root
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_DATA_DIR = ROOT / "data"
-DEFAULT_DATASET = ROOT / "bench" / "datasets" / "v1.jsonl"
+DEFAULT_DATASET = ROOT / "bench" / "datasets" / "v2.jsonl"
 
 
 def main() -> None:
@@ -26,7 +26,7 @@ def main() -> None:
 
     eval_cmd = sub.add_parser("eval", help="benchmark a running Fontis backend")
     eval_cmd.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
-    eval_cmd.add_argument("--run", default="v1", help="run name: results go to <data-dir>/results/<run>")
+    eval_cmd.add_argument("--run", default="v2", help="run name: results go to <data-dir>/results/<run>")
     eval_sub = eval_cmd.add_subparsers(dest="action", required=True)
     eval_sub.add_parser("check", help="validate the dataset against the corpus")
     for name, help_text in (("retrieval", "query /api/search in every mode"), ("answers", "query /api/ask")):

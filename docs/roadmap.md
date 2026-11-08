@@ -9,4 +9,4 @@
 | 5 | Next.js UI in several languages, AI Act transparency features (AI disclosure, answer log, visible sources) — [details](transparency.md) | ✅ |
 | 6 | Bring-your-own documents: upload, users, groups and per-document permissions — [details](documents-and-access.md) | ✅ |
 | 7 | Docker Compose for EU deployment, Prometheus and Grafana dashboard, Langfuse tracing, rate limiting; public demo prepared, not yet published — [deployment](deployment.md), [observability](observability.md) | ✅ |
-| 8 | Benchmark v2 (150 questions) published on Hugging Face, technical write-up, release | |
+| 8 | Benchmark v2: 150 questions with a held-out part, published on [Hugging Face](https://huggingface.co/datasets/Fla00/fontis-eu-law-qa) — [findings](benchmark/v2-findings.md); [technical write-up](write-up.md); release v0.1.0 | ✅ |
