@@ -96,8 +96,10 @@ pgvector and `qwen3:14b` answering, on a single RTX 3060; judged by `gemma4:12b`
 | Answers judged correct / correct or partial | 64% / 96% |
 | Unanswerable questions refused | 30 / 30 |
 
-Most partial answers are incomplete lists; the remaining errors are comparisons the model got wrong
-despite citing the right articles. Full report, per-language results and findings:
+Most partial answers are incomplete because only part of a long article reached the model (a
+context budget of 2,400 characters per source), not because of retrieval; two errors are comparisons
+the model got wrong despite citing the right articles. A manual re-read suggests the judge is wrong
+in about one verdict in seven, so treat the correctness figures as approximate. Full report, per-language results and findings:
 [docs/benchmark](https://github.com/CraftaleAgency/fontis/tree/main/docs/benchmark).
 
 ## How it was made
@@ -110,7 +112,8 @@ never used for tuning.
 
 ## Limitations
 
-- **Small**: 24 answerable questions per language; differences of a few points are noise.
+- **Small**: 24 answerable questions per language, and the five languages are translations of the
+  same questions, so the effective sample is 24 base questions; differences of a few points are noise.
 - **Single author**: the questions reflect what one person thought users would ask.
 - **Strict gold**: only the article that states the rule counts; a recital explaining it does not.
 - **Point in time**: references follow the texts as published; later amendments are not reflected.

@@ -24,10 +24,11 @@ new answerable questions, never used for tuning:
 | Questions | n | Hit@1 | Hit@5 | Answers citing gold | Correct (judge) | Correctness score |
 |---|---:|---:|---:|---:|---:|---:|
 | v1 questions (tuned on) | 75 | 79% | 84% | 81% | 71% | 83% |
-| **New questions (held out)** | 45 | **76%** | **98%** | **98%** | 53% | 74% |
+| **New questions (held out, 9 base questions)** | 45 | **76%** | **98%** | **98%** | 53% | 74% |
 
 Retrieval generalises: on unseen questions the gold article is in the top 5 almost every time. The
-lower answer scores on the new questions come from what they ask (section 3), not from retrieval.
+lower answer scores on the new questions come from how much of each article reaches the model
+(section 3), not from retrieval.
 The comparison of 13 ranking settings on all 120 answerable questions gives the same order as in v1:
 the default is tied first with vector search, equal-weight hybrid ranking is last at 41% Hit@1
 ([table](v2-tuning.md)).
@@ -40,26 +41,54 @@ regulation is in the corpus, but both resemble NIS2 and the GDPR) and the amount
 fine (an enforcement decision, not legislation). All 30 unanswerable questions were refused in every
 language, 10 by the similarity threshold and 20 by the model itself.
 
-## 3. Most imperfect answers are incomplete lists
+## 3. Most imperfect answers are missing context, not cut short
 
 Of the 120 answers, 77 were judged correct, 38 partial and 5 incorrect. Partial verdicts
 concentrate on questions whose answer is a list: prohibited AI practices (8 items), obligations of
 general-purpose AI providers, the NIS2 minimum security measures (10 items), the contents of a
-fundamental rights impact assessment. The system prompt asks for *at most six sentences*, and the
-judge marks an answer that names five of eight practices as partial. Shorter answers are a product
-choice; a list-aware prompt (complete enumerations, short sentences) is the obvious next experiment.
+fundamental rights impact assessment.
 
-## 4. The remaining errors are reasoning, not retrieval
+An earlier version of this page blamed the system prompt, which asks for *at most six sentences*.
+The answers do not support that: only 9 of the 38 partial answers use six sentences, and 22 use
+three or fewer. The main cause is the **context budget of 2,400 characters per source**. Long
+articles are stored as many chunks and only two or three of them reach the model: Article 5 of the
+AI Act is 12 chunks and about 11,000 characters in English, so most of the prohibited practices are
+never in the prompt. The model cannot list what it was not shown.
+
+The next experiment is therefore context assembly — the whole top-ranked article, chunks chosen by
+similarity to the question — before any change to the prompt.
+
+## 4. Two reasoning errors, one more context error
 
 The cross-regulation question (*which has higher maximum fines, the GDPR or the AI Act?*) retrieved
 and cited both gold articles in all five languages. In English, Italian and German the answer is
 right; in French and Spanish the model quotes the correct figures (EUR 35 million or 7 % against
-EUR 20 million or 4 %) and then concludes the opposite. Asked for the maximum GDPR fine in French,
-it quoted the lower tier of Article 83 (EUR 10 million or 2 %) instead of the higher one. A
-14-billion-parameter model reading the right sources can still compare them wrongly: these are
-the cases a larger answer model, or a check of numeric claims against the cited text, would fix.
+EUR 20 million or 4 %) and then concludes the opposite. These two are reasoning errors: a
+14-billion-parameter model reading the right figures can still compare them wrongly, and a check of
+numeric claims against the cited text would catch them.
+
+Asked for the maximum GDPR fine in French, Fontis quoted the lower tier of Article 83 (EUR 10
+million or 2 %). An earlier version of this page counted that as a reasoning error too. It is a
+context error: the French text of Article 83 is six chunks, the higher tier (EUR 20 million or 4 %)
+is in the fourth and fifth, and a replay of the context assembly shows the model received the
+second and third. It answered correctly from what it was given.
 
 ## 5. Languages
 
 French has the best retrieval (96% Hit@5) and the lowest correctness (54%), German the weakest
 Hit@1 (67%). With 24 questions per language, differences of a few points are within noise.
+
+## 6. Limits of these numbers
+
+- **The judge makes mistakes.** A manual re-read of the verdicts found `gemma4:12b` wrong in
+  roughly one case in seven, in both directions; graded by hand, about 69% of the answers are
+  correct rather than 64%. That re-read was done by one person and is an estimate, so the tables
+  keep the judge's verdicts. A second judge and a measured judge–human agreement are planned.
+- **The effective sample is 24, not 120.** The five languages are translations of the same 24
+  answerable base questions, so the answers are not independent. Confidence intervals should come
+  from a bootstrap paired by base question; until then, treat differences of several points as noise.
+- **Correct is not always supported.** A few answers are right while the cited source does not
+  contain the claim (the legal bases of the GDPR, in Spanish and Italian): the model answered from
+  memory. The benchmark does not yet measure whether each sentence is supported by its citation.
+- **Source language leaks.** Sources are given in the language that matched, and words from it
+  occasionally appear in the answer (a Spanish legal term in a French answer).

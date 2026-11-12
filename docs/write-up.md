@@ -1,6 +1,6 @@
 # Cited or nothing: building and measuring a sovereign RAG assistant for EU law
 
-*Fontis, eight weeks in: what worked, what the benchmark caught, and what a 14-billion-parameter
+*Fontis after eight milestones: what worked, what the benchmark caught, and what a 14-billion-parameter
 model on one consumer GPU can and cannot do.*
 
 ## The problem
@@ -83,26 +83,31 @@ NIS2 and the GDPR but are not in the corpus, and the amount of a specific GDPR f
 enforcement decision rather than law. A third of refusals come from a similarity threshold before
 the model is called, the rest from the model.
 
-### 5. Held-out questions: retrieval generalises, reasoning is the limit
+### 5. Held-out questions: retrieval generalises, context is the limit
 
-The ranking was tuned on the v1 questions, so v2 adds 9 answerable questions never used for
-tuning. On those, the gold article is first **76%** of the time and in the top five **98%** of the
-time, against 79% and 84% on the questions it was tuned on: the tuning did not overfit.
+The ranking was tuned on the v1 questions, so v2 adds 9 answerable base questions (45 with their
+translations) never used for tuning. On those, the gold article is first **76%** of the time and in
+the top five **98%** of the time, against 79% and 84% on the questions it was tuned on: the tuning
+did not overfit. Nine questions is a small sample, and the number should be read that way.
 
 Answer quality is lower on the new questions (53% correct, 74% score), and the reasons are
 instructive:
 
-- **Lists get cut short.** Questions such as "which cybersecurity measures does NIS2 require?" have
-  ten-item answers; the prompt asks for at most six sentences, and the judge marks incomplete lists
-  as partial. That is a product choice worth revisiting, not a retrieval failure.
+- **Long articles do not fit.** Questions such as "which cybersecurity measures does NIS2 require?"
+  have ten-item answers. The first reading blamed the prompt, which asks for at most six sentences,
+  but only 9 of the 38 partial answers use six sentences. The real cause is the budget of 2,400
+  characters per source: Article 5 of the AI Act is about 11,000 characters, so most prohibited
+  practices never reach the model. The same budget explains a wrong GDPR fine in French — the
+  higher tier of Article 83 was in a part of the article the model did not receive.
 - **Comparisons go wrong with the right sources.** Asked whether the GDPR or the AI Act has higher
   maximum fines, Fontis retrieved and cited both articles in all five languages. In French and
   Spanish the model quoted EUR 35 million or 7 % for the AI Act and EUR 20 million or 4 % for the
   GDPR — and concluded that the GDPR's fines are higher.
 
-That second case is the honest limit of a 14B model on one consumer GPU: citations make the error
-visible and checkable, but they do not prevent it. A larger answer model, or a step that checks
-numeric claims against the cited text, is the next lever.
+So the fix that section 3 introduced is also the next bottleneck: how the context is assembled
+matters more than the size of the model. The comparison errors are the honest limit of a 14B model
+on one consumer GPU: citations make the error visible and checkable, but they do not prevent it. A
+check of numeric claims against the cited text is the next lever there.
 
 ## Headline numbers (v2)
 
@@ -132,9 +137,12 @@ because questions can contain personal data.
 
 1. **Measure before tuning.** The equal-weight hybrid search looked reasonable and was the worst
    configuration tested. Without a benchmark it would have shipped.
-2. **Keep the judge's reasons.** Manual review found a judge error among four "incorrect" verdicts in
-   v1; numbers without reasons would have hidden it.
-3. **Hold questions out.** The 9 held-out questions are what make the retrieval numbers credible.
+2. **Keep the judge's reasons, and the answers.** Manual review found a judge error among four
+   "incorrect" verdicts in v1, and in v2 a re-read suggests the judge is wrong about one time in
+   seven. Re-reading the stored answers also overturned two of this project's own published
+   conclusions (section 5).
+3. **Hold questions out.** The 9 held-out questions are what make the retrieval numbers credible —
+   and nine is still few.
 4. **Refusal is a feature to test**, with questions designed to tempt the model, not only obviously
    off-topic ones.
 5. **Citations are necessary, not sufficient.** They make every claim checkable; they do not make the

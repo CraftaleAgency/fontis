@@ -12,12 +12,14 @@ European language and get answers that cite the exact source — with data and m
 - **Cited or nothing.** Every answer points to the article, paragraph and document it comes from.
   When no source supports an answer, Fontis says so instead of guessing.
 - **Multilingual by design.** Ask in Italian, find the answer in a German document, read it in Italian.
-- **Sovereign.** Runs on your own servers or on EU clouds, with local open-weight models or an EU provider
-  (Mistral). Documents never have to leave the EU.
+- **Sovereign.** Runs on your own servers or on EU clouds, with local open-weight models. An EU cloud
+  provider (Mistral) is planned. Documents never have to leave the EU.
 - **Your documents, your rules.** Upload PDFs and Word files; share each one with groups. A document a
   user may not read is filtered out inside retrieval, so it never reaches the model.
-- **AI Act–ready.** AI disclosure, answer logs and visible sources are built in, not bolted on.
-- **Measured.** A public, multilingual benchmark shows how well it works — and on your own documents too.
+- **Built for AI Act transparency (Article 50).** AI disclosure, answer logs and visible sources are
+  built in, not bolted on.
+- **Measured.** A public, multilingual benchmark shows how well it works on EU law;
+  measuring it on your own documents is planned.
 
 ## Benchmark
 
@@ -27,13 +29,13 @@ refused. With `qwen3:14b` and `bge-m3` on a single RTX 3060:
 
 | | |
 |---|---|
-| Gold article ranked first / in the top 5 | **78%** / 89% — 76% / 98% on questions never used for tuning |
+| Gold article ranked first / in the top 5 | **78%** / 89% — 76% / 98% on the 9 base questions never used for tuning |
 | Answers citing the gold article | 88% |
 | Answers correct / correct or partial (LLM judge) | **64%** / 96% |
 | Unanswerable questions refused | **30 / 30** |
 
-What the benchmark found — incomplete lists, comparisons a 14B model gets wrong, and how it shaped
-the ranking: [v2 findings](docs/benchmark/v2-findings.md) · [v1 findings](docs/benchmark/v1-findings.md).
+What the benchmark found — long articles that do not fit the context, comparisons a 14B model gets
+wrong, and how it shaped the ranking: [v2 findings](docs/benchmark/v2-findings.md) · [v1 findings](docs/benchmark/v1-findings.md).
 
 ## Architecture
 
