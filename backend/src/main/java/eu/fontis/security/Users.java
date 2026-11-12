@@ -83,6 +83,10 @@ public class Users {
 		return this.jdbc.sql("DELETE FROM app_user WHERE id = :id").param("id", id).update() == 1;
 	}
 
+	public long countAdmins() {
+		return this.jdbc.sql("SELECT count(*) FROM app_user WHERE role = 'ADMIN'").query(Long.class).single();
+	}
+
 	public long count() {
 		return this.jdbc.sql("SELECT count(*) FROM app_user").query(Long.class).single();
 	}

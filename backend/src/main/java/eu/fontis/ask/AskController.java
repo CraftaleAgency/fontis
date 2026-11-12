@@ -2,6 +2,7 @@ package eu.fontis.ask;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Semaphore;
 
 import eu.fontis.documents.DocumentAccess;
 import eu.fontis.log.AnswerLog;
@@ -11,6 +12,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -27,6 +31,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api")
 @Validated
 class AskController {
+
+	private static final Logger log = LoggerFactory.getLogger(AskController.class);
 
 	static final Set<String> LANGUAGES = Set.of("eng", "ita", "deu", "fra", "spa");
 
@@ -48,6 +54,9 @@ class AskController {
 
 	private final Users users;
 
+	// The GPU answers one question at a time: beyond a few, waiting only makes every answer time out.
+	private final Semaphore generations;
+
 	AskController(AnswerService answerService, AnswerLog answerLog, DocumentAccess documentAccess,
 			AnswerMetrics metrics, AskRateLimiter rateLimiter, Retrieval retrieval, AskProperties properties,
 			AskTracing tracing, Users users) {
@@ -60,6 +69,7 @@ class AskController {
 		this.properties = properties;
 		this.tracing = tracing;
 		this.users = users;
+		this.generations = new Semaphore(Math.max(1, properties.maxConcurrent()));
 	}
 
 	/**
@@ -79,14 +89,37 @@ class AskController {
 		}
 		String lang = language(request.lang());
 		String question = request.question().strip();
-		AskResponse response = this.tracing.answer(question, lang, userId(authentication),
-				() -> this.answerService.ask(question, lang, this.documentAccess.of(authentication)));
+		if (!this.generations.tryAcquire()) {
+			throw busy(httpResponse, "Fontis is answering other questions, try again shortly");
+		}
+		AskResponse response;
+		try {
+			response = this.tracing.answer(question, lang, userId(authentication),
+					() -> this.answerService.ask(question, lang, this.documentAccess.of(authentication)));
+		}
+		catch (RuntimeException ex) {
+			// The model server is unreachable, too slow or failed: not something the client did wrong.
+			log.warn("Could not answer a question: {}", ex.toString());
+			this.metrics.failed(lang);
+			throw busy(httpResponse, "The language model is not available, try again shortly");
+		}
+		finally {
+			this.generations.release();
+		}
 		this.answerLog.record(response, lang);
 		this.metrics.record(response, lang);
 		return response;
 	}
 
-	/** Retrieval only, without generation: used by the benchmark to measure retrieval quality. */
+	private static ResponseStatusException busy(HttpServletResponse response, String message) {
+		response.setHeader("Retry-After", "10");
+		return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, message);
+	}
+
+	/**
+	 * Retrieval only, without generation: used by the benchmark to measure retrieval quality and to
+	 * compare ranking settings. For administrators only (see SecurityConfig).
+	 */
 	@GetMapping("/search")
 	List<Source> search(@RequestParam @NotBlank @Size(max = 1000) String q,
 			@RequestParam(required = false) String lang, @RequestParam(required = false) Integer limit,

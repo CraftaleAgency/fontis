@@ -10,9 +10,13 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   devIndicators: false,
+  poweredByHeader: false,
   experimental: {
     // Answers can take over 30 s when the model is loaded into the GPU: don't cut the proxy before.
     proxyTimeout: 180_000,
+    // Uploads go through this proxy, which otherwise cuts request bodies at 10 MB without an error.
+    // Matches the backend's spring.servlet.multipart.max-request-size.
+    proxyClientMaxBodySize: "26mb",
   },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${backend}/api/:path*` }];

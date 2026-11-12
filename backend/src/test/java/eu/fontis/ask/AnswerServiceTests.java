@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AnswerServiceTests {
 
-	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1.0, 1.0, false, 2400);
+	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1024, 2, 1.0, 1.0, false, 2400);
 
 	private static final List<Source> SOURCES = List.of(
 			new Source("32016R0679", "art_17", "GDPR", "Articolo 17", "Diritto alla cancellazione", "url17", "deu",
@@ -70,6 +70,12 @@ class AnswerServiceTests {
 		AskResponse response = service(0.70, "Sì, puoi.").ask("Posso far cancellare i miei dati?", "ita", Access.EVERYTHING);
 
 		assertThat(response.status()).isEqualTo(Status.UNCITED);
+	}
+
+	@Test
+	void citationListsAndRangesAreRecognised() {
+		assertThat(AnswerService.citedNumbers("A [2, 4]. B [1–3]. C [5-6]. D [9]. E [99999999999].", 6))
+			.containsExactly(2, 4, 1, 3, 5, 6);
 	}
 
 	@Test

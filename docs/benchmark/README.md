@@ -60,6 +60,9 @@ An LLM judge is a proxy, not ground truth. The raw verdicts and reasons are kept
 
 ## Running it
 
+The retrieval and tuning steps call `/api/search`, which is for administrators: set
+`FONTIS_ADMIN_EMAIL` and `FONTIS_ADMIN_PASSWORD` and the benchmark signs in.
+
 ```bash
 cd bench
 uv run fontis-bench eval check                  # dataset sanity (v2 by default; --dataset, --run)

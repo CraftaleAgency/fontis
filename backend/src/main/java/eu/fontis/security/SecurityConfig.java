@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -28,7 +29,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
  * Session-based security for the web app: a JSON login sets a session cookie; state-changing
  * requests need the CSRF token from the XSRF-TOKEN cookie in the X-XSRF-TOKEN header.
  * <p>
- * Asking and searching are open to everyone: what a request can see is decided by
+ * Asking is open to everyone: what a request can see is decided by
  * {@link eu.fontis.documents.DocumentAccess}, so anonymous users only get the public EU legislation.
  */
 @Configuration(proxyBeanMethods = false)
@@ -37,7 +38,7 @@ class SecurityConfig {
 	// Only in the web application: the ingestion job runs without a web server.
 	@Bean
 	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, Users users) throws Exception {
 		return http
 			.authorizeHttpRequests(auth -> auth
 				// Actuator listens on the internal management port only (management.server.port).
@@ -46,13 +47,15 @@ class SecurityConfig {
 				.requestMatchers("/error").permitAll()
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/ask").permitAll()
-				.requestMatchers(HttpMethod.GET, "/api/search", "/api/documents").permitAll()
-				.requestMatchers("/api/log/**", "/api/admin/**").hasRole("ADMIN")
+				.requestMatchers(HttpMethod.GET, "/api/documents").permitAll()
+				// Retrieval with ranking parameters is a benchmark tool, not part of the web app.
+				.requestMatchers("/api/search", "/api/log/**", "/api/admin/**").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.POST, "/api/documents").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.DELETE, "/api/documents/**").hasRole("ADMIN")
 				.anyRequest().authenticated())
 			.csrf(csrf -> csrf.spa())
 			.securityContext(context -> context.securityContextRepository(securityContextRepository()))
+			.addFilterBefore(new CurrentUserFilter(users), AnonymousAuthenticationFilter.class)
 			// An API: 401 instead of a redirect to a login page.
 			.exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 			.formLogin(form -> form.disable())

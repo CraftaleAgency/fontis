@@ -5,6 +5,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 
+import eu.fontis.ask.AskRateLimiter;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -32,10 +35,14 @@ class AuthController {
 
 	private final Users users;
 
+	// Failed attempts per client address, so passwords cannot be guessed at speed.
+	private final AskRateLimiter loginLimiter;
+
 	private final SecurityContextHolderStrategy holder = SecurityContextHolder.getContextHolderStrategy();
 
 	AuthController(AuthenticationManager authenticationManager, SecurityContextRepository contextRepository,
-			Users users) {
+			Users users, @Value("${fontis.auth.login-attempts-per-minute:5}") int loginAttemptsPerMinute) {
+		this.loginLimiter = new AskRateLimiter(loginAttemptsPerMinute);
 		this.authenticationManager = authenticationManager;
 		this.contextRepository = contextRepository;
 		this.users = users;
@@ -58,12 +65,17 @@ class AuthController {
 	@PostMapping("/login")
 	Users.User login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest,
 			HttpServletResponse httpResponse) {
+		if (this.loginLimiter.exhausted(httpRequest.getRemoteAddr())) {
+			httpResponse.setHeader("Retry-After", String.valueOf(this.loginLimiter.retryAfterSeconds()));
+			throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many login attempts, try again shortly");
+		}
 		Authentication authentication;
 		try {
 			authentication = this.authenticationManager
 				.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password()));
 		}
 		catch (AuthenticationException ex) {
+			this.loginLimiter.tryAcquire(httpRequest.getRemoteAddr());
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong email or password");
 		}
 		// A new session id on login prevents session fixation; without a session one is created below.

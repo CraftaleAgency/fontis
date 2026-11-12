@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,10 +56,16 @@ class AdminController {
 
 	@DeleteMapping("/users/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
-	void delete(@PathVariable long id) {
-		if (!this.users.delete(id)) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+	void delete(@PathVariable long id, Authentication authentication) {
+		Users.User user = this.users.find(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+		// Otherwise nobody could manage users or documents any more.
+		if (user.email().equals(authentication.getName())) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "You cannot delete your own account");
 		}
+		if (user.role() == Users.Role.ADMIN && this.users.countAdmins() <= 1) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "The last administrator cannot be deleted");
+		}
+		this.users.delete(id);
 	}
 
 	@GetMapping("/groups")

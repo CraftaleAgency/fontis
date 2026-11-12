@@ -53,13 +53,25 @@ export async function recentAnswers(limit = 50): Promise<LogEntry[]> {
   return json(await fetch(`/api/log?limit=${limit}`, { cache: "no-store" }), "Log");
 }
 
-/** Splits an answer into text and [n] citation markers, dropping the space before a marker. */
+/**
+ * Splits an answer into text and citation numbers, dropping the space before a marker. Besides [n],
+ * accepts the lists and ranges some models write: [1, 3], [1-3], [1–3].
+ */
 export function splitCitations(answer: string): (string | number)[] {
-  const parts = answer.split(/\[(\d+)\]/);
-  return parts.map((part, i) => {
-    if (i % 2 === 1) return Number(part);
-    return i + 1 < parts.length ? part.replace(/\s+$/, "") : part;
+  const parts = answer.split(/\[(\d{1,3}(?:\s*[,;–-]\s*\d{1,3})*)\]/);
+  return parts.flatMap<string | number>((part, i) => {
+    if (i % 2 === 1) return citationNumbers(part);
+    return [i + 1 < parts.length ? part.replace(/\s+$/, "") : part];
   });
+}
+
+function citationNumbers(marker: string): number[] {
+  const numbers: number[] = [];
+  for (const [, from, to] of marker.matchAll(/(\d{1,3})(?:\s*[–-]\s*(\d{1,3}))?/g)) {
+    const last = Math.min(Number(to ?? from), Number(from) + 20);
+    for (let n = Number(from); n <= last; n++) numbers.push(n);
+  }
+  return numbers;
 }
 
 /** "Recital 28" instead of the bare "(28)" label the corpus uses for recitals. */

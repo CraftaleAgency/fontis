@@ -33,6 +33,16 @@ class AnswerMetrics {
 			.register(registry);
 	}
 
+	/** A question that could not be answered because the model or the database failed. */
+	void failed(String lang) {
+		Counter.builder("fontis.answers")
+			.description("Questions answered, by outcome and language")
+			.tag("status", "ERROR")
+			.tag("lang", lang)
+			.register(this.registry)
+			.increment();
+	}
+
 	void record(AskResponse response, String lang) {
 		Counter.builder("fontis.answers")
 			.description("Questions answered, by outcome and language")

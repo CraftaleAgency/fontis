@@ -77,6 +77,7 @@ def api_client(api: str, timeout: float) -> Iterator[httpx.Client]:
     """Client for the Fontis API: fetches the CSRF cookie and sends it back as a header on every request.
 
     FONTIS_INSECURE_TLS=1 accepts a self-signed certificate, e.g. the Docker stack on https://localhost.
+    With FONTIS_ADMIN_EMAIL and FONTIS_ADMIN_PASSWORD it signs in: /api/search is for administrators.
     """
     verify = os.environ.get("FONTIS_INSECURE_TLS") != "1"
     with httpx.Client(base_url=api, timeout=timeout, verify=verify) as client:
@@ -84,6 +85,9 @@ def api_client(api: str, timeout: float) -> Iterator[httpx.Client]:
         token = client.cookies.get("XSRF-TOKEN")
         if token:
             client.headers["X-XSRF-TOKEN"] = token
+        email, password = os.environ.get("FONTIS_ADMIN_EMAIL"), os.environ.get("FONTIS_ADMIN_PASSWORD")
+        if email and password:
+            client.post("/api/auth/login", json={"email": email, "password": password}).raise_for_status()
         yield client
 
 

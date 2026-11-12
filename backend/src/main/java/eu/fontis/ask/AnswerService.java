@@ -39,7 +39,10 @@ public class AnswerService {
 			- Be concise: at most six sentences.
 			""";
 
-	private static final Pattern CITATION = Pattern.compile("\\[(\\d+)]");
+	// [1], and also lists and ranges some models write: [1, 3], [1-3], [1–3].
+	private static final Pattern CITATION = Pattern.compile("\\[(\\d{1,3}(?:\\s*[,;–-]\\s*\\d{1,3})*)]");
+
+	private static final Pattern NUMBER_OR_RANGE = Pattern.compile("(\\d{1,3})(?:\\s*[–-]\\s*(\\d{1,3}))?");
 
 	// Some models still emit a reasoning block even with thinking disabled.
 	private static final Pattern THINK_BLOCK = Pattern.compile("(?s)<think>.*?</think>");
@@ -86,7 +89,8 @@ public class AnswerService {
 
 		start = System.nanoTime();
 		String raw = this.chatClient.prompt()
-			.options(OllamaChatOptions.builder().disableThinking().numCtx(this.properties.numCtx()))
+			.options(OllamaChatOptions.builder().disableThinking().numCtx(this.properties.numCtx())
+				.numPredict(this.properties.numPredict()))
 			.user(userPrompt(question, withContext))
 			.call()
 			.content();
@@ -119,9 +123,13 @@ public class AnswerService {
 		Set<Integer> numbers = new LinkedHashSet<>();
 		Matcher matcher = CITATION.matcher(answer);
 		while (matcher.find()) {
-			int n = Integer.parseInt(matcher.group(1));
-			if (n >= 1 && n <= sourceCount) {
-				numbers.add(n);
+			Matcher part = NUMBER_OR_RANGE.matcher(matcher.group(1));
+			while (part.find()) {
+				int from = Integer.parseInt(part.group(1));
+				int to = part.group(2) == null ? from : Integer.parseInt(part.group(2));
+				for (int n = Math.max(1, from); n <= Math.min(to, sourceCount); n++) {
+					numbers.add(n);
+				}
 			}
 		}
 		return new ArrayList<>(numbers);

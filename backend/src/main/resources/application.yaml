@@ -16,7 +16,23 @@ spring:
     multipart:
       max-file-size: 25MB
       max-request-size: 26MB
+  http:
+    clients:
+      # The model server must answer or fail within a bounded time: the JDK client has no stale
+      # pooled connections, and the read timeout stays below a reverse proxy's 100 seconds.
+      imperative:
+        factory: jdk
+      connect-timeout: 5s
+      read-timeout: ${FONTIS_MODEL_READ_TIMEOUT:90s}
   ai:
+    retry:
+      # One quick retry for a dropped connection; the default (10 attempts, backing off to 3 minutes)
+      # would keep a request and the GPU busy for many minutes.
+      max-attempts: 2
+      backoff:
+        initial-interval: 500ms
+        multiplier: 2
+        max-interval: 2s
     model:
       # Local models through Ollama. Mistral (EU provider) will be added for the cloud comparison.
       chat: ollama
@@ -52,6 +68,10 @@ fontis:
     rate-limit-per-minute: ${FONTIS_RATE_LIMIT_PER_MINUTE:20}
     # Context window for the chat model; sources plus answer fit well within it.
     num-ctx: 8192
+    # Tokens the model may generate: an answer of six sentences needs far fewer.
+    num-predict: 1024
+    # Answers generated at the same time; further questions get 503 instead of queueing on the GPU.
+    max-concurrent: ${FONTIS_MAX_CONCURRENT_ANSWERS:2}
     # Characters of each source given to the model, from several chunks of the article: 6 × 2,400
     # stays within num-ctx, so the chat and embedding models still fit together on a 12 GB GPU.
     max-source-chars: 2400
@@ -62,6 +82,9 @@ fontis:
     recital-weight: 0.6
     sum-languages: false
 
+  auth:
+    # Failed login attempts per client per minute (0 = no limit).
+    login-attempts-per-minute: ${FONTIS_LOGIN_ATTEMPTS_PER_MINUTE:5}
   admin:
     # First administrator, created at startup when there are no users yet.
     email: ${FONTIS_ADMIN_EMAIL:}
@@ -75,6 +98,13 @@ fontis:
     cleanup-cron: "0 30 3 * * *"
 
 server:
+  servlet:
+    session:
+      timeout: 8h
+      cookie:
+        same-site: lax
+        # Set to true behind HTTPS (the Docker stack does).
+        secure: ${FONTIS_COOKIE_SECURE:false}
   # Client address from X-Forwarded-For when the request comes through the proxies (private networks).
   forward-headers-strategy: native
 

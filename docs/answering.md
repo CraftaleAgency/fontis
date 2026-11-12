@@ -26,7 +26,8 @@ EUR-Lex links. The model answers in the language of the question.
 | `retrievalMs`, `generationMs` | Timings |
 
 `GET /api/search?q=...&lang=...&limit=...` returns retrieval results only. The benchmark uses it to
-measure retrieval separately from generation.
+measure retrieval separately from generation and to compare ranking settings; it is open to
+administrators only.
 
 ## Retrieval
 
