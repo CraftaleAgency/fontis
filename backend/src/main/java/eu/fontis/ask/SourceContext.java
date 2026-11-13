@@ -15,7 +15,8 @@ import java.util.TreeMap;
  * entities in different chunks).
  * <p>
  * Chunks are picked in this order until the character budget is used: the retrieved chunks, best
- * first, then the others by distance from the best one. They are then put back in reading order,
+ * first, then the article's first chunk (its lead-in, e.g. "The following AI practices shall be
+ * prohibited:"), then the others by distance from the best one. They are then put back in reading order,
  * with a gap marker where chunks were skipped.
  */
 final class SourceContext {
@@ -33,6 +34,7 @@ final class SourceContext {
 	static String assemble(Map<Integer, String> chunks, List<Integer> retrieved, int budget) {
 		int best = retrieved.get(0);
 		Set<Integer> order = new LinkedHashSet<>(retrieved);
+		chunks.keySet().stream().min(Integer::compare).ifPresent(order::add);
 		chunks.keySet()
 			.stream()
 			.sorted(Comparator.comparingInt((Integer i) -> Math.abs(i - best)).thenComparingInt(i -> i))

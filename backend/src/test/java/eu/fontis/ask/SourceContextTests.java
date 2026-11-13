@@ -21,10 +21,12 @@ class SourceContextTests {
 	}
 
 	@Test
-	void retrievedChunksComeFirstThenNeighboursOfTheBest() {
-		// Budget for two chunks: the best (2), then its nearest neighbour (1), not chunk 0.
+	void retrievedChunksComeFirstThenTheLeadInThenNeighboursOfTheBest() {
+		// Budget for two chunks: the best (2), then the article's lead-in (0) before the neighbour (1).
 		assertThat(SourceContext.assemble(ARTICLE, List.of(2), 45))
-			.isEqualTo("important: EUR 7 000 000\npenalty payments");
+			.isEqualTo("essential: EUR 10 000 000" + SourceContext.GAP + "penalty payments");
+		Map<Integer, String> longer = Map.of(0, "lead-in", 1, "a", 2, "b", 3, "best");
+		assertThat(SourceContext.assemble(longer, List.of(3), 12)).isEqualTo("lead-in" + SourceContext.GAP + "b\nbest");
 		// A second retrieved chunk outranks a neighbour: 0 is retrieved, so it is picked before 1.
 		assertThat(SourceContext.assemble(ARTICLE, List.of(2, 0), 45))
 			.isEqualTo("essential: EUR 10 000 000" + SourceContext.GAP + "penalty payments");

@@ -50,8 +50,10 @@ Full-text search did not help on paraphrased questions, so its weight is 0 by de
 
 - If the closest chunk has a cosine similarity below **0.45**, the response is `NO_SOURCE` and the
   model is not called.
-- Otherwise the model receives up to six numbered sources — each up to 2,400 characters of its
-  article, not just the best chunk — and must end every factual sentence with
+- Otherwise the model receives up to six numbered sources — several chunks of each article, not
+  just the best one: up to 6,000 characters for the best-ranked source, 3,000 for the next two and
+  1,200 for the rest (`fontis.ask.source-chars`, [experiments](benchmark/v2-context.md)) — and must
+  end every factual sentence with
   `[n]`, use nothing else, and reply `NO_ANSWER` when the sources do not contain the answer.
 - Citation markers that point to no source are dropped; an answer with none is `UNCITED`.
 

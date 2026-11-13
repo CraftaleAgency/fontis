@@ -55,8 +55,11 @@ def _append(path: Path, record: dict) -> None:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
 
-def _request(client: httpx.Client, method: str, url: str, attempts: int = 3, **kwargs) -> httpx.Response:
-    """Send a request, retrying on timeouts, connection errors and server errors (models run on a remote GPU)."""
+def _request(client: httpx.Client, method: str, url: str, attempts: int = 6, **kwargs) -> httpx.Response:
+    """Send a request, retrying on timeouts, connection errors and server errors (models run on a remote GPU).
+
+    The waits grow to a few minutes, so a model server that stops answering for a while does not end a run.
+    """
     for attempt in range(1, attempts + 1):
         try:
             response = client.request(method, url, **kwargs)
@@ -68,7 +71,7 @@ def _request(client: httpx.Client, method: str, url: str, attempts: int = 3, **k
         except (httpx.TimeoutException, httpx.NetworkError):
             if attempt == attempts:
                 raise
-        time.sleep(5 * attempt)
+        time.sleep(min(15 * 2 ** (attempt - 1), 240))
     raise AssertionError("unreachable")
 
 

@@ -94,8 +94,10 @@ class AskController {
 		}
 		AskResponse response;
 		try {
-			response = this.tracing.answer(question, lang, userId(authentication),
-					() -> this.answerService.ask(question, lang, this.documentAccess.of(authentication)));
+			Long userId = userId(authentication);
+			Access access = this.documentAccess.of(authentication);
+			response = Deadline.run(this.properties.answerTimeout(), () -> this.tracing.answer(question, lang, userId,
+					() -> this.answerService.ask(question, lang, access)));
 		}
 		catch (RuntimeException ex) {
 			// The model server is unreachable, too slow or failed: not something the client did wrong.

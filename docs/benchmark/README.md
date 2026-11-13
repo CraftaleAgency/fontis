@@ -16,7 +16,8 @@ A multilingual benchmark for retrieval and cited answers on EU legislation.
   Resilience Act (not in the corpus) and the amount of a specific GDPR fine (an enforcement
   decision, not legislation).
 
-Results: [v2 report](v2.md) · [findings](v2-findings.md) · [ranking settings](v2-tuning.md).
+Results: [v2 report](v2.md) · [findings](v2-findings.md) · [ranking settings](v2-tuning.md) ·
+[context and prompt experiments](v2-context.md).
 
 ## Dataset v1
 

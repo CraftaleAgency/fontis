@@ -18,8 +18,8 @@ spring:
       max-request-size: 26MB
   http:
     clients:
-      # The model server must answer or fail within a bounded time: the JDK client has no stale
-      # pooled connections, and the read timeout stays below a reverse proxy's 100 seconds.
+      # The model server must answer or fail within a bounded time (fontis.ask.answer-timeout also
+      # caps a whole answer, as a dead connection can outlive these timeouts).
       imperative:
         factory: jdk
       connect-timeout: 5s
@@ -70,11 +70,16 @@ fontis:
     num-ctx: 8192
     # Tokens the model may generate: an answer of six sentences needs far fewer.
     num-predict: 1024
+    # Time allowed for one answer (retrieval and generation), enforced on top of the HTTP timeouts.
+    answer-timeout: ${FONTIS_ANSWER_TIMEOUT:100s}
     # Answers generated at the same time; further questions get 503 instead of queueing on the GPU.
     max-concurrent: ${FONTIS_MAX_CONCURRENT_ANSWERS:2}
-    # Characters of each source given to the model, from several chunks of the article: 6 × 2,400
-    # stays within num-ctx, so the chat and embedding models still fit together on a 12 GB GPU.
-    max-source-chars: 2400
+    # Characters given to the model for each source by rank, from several chunks of the article; the
+    # last value applies to the rest. Better-ranked sources get more: long articles (AI Act Article 5
+    # is 11,000 characters) lost most of their content at 2,400 each (benchmark v2), and comparisons
+    # need the second source too. The total stays within num-ctx in every language, so the chat and
+    # embedding models still fit together on a 12 GB GPU.
+    source-chars: ${FONTIS_SOURCE_CHARS:6000,3000,3000,1200}
     # Ranking weights, chosen with the v1 benchmark (docs/benchmark/v1.md): down-weighting recitals
     # brought Hit@1 from 68% to 79%; full-text search did not help on paraphrased questions, so it is
     # off by default (a weight of 0 skips it) and kept as an option.

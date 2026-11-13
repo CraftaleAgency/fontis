@@ -72,7 +72,8 @@ Grafana starts with the **Fontis** dashboard provisioned — see [observability]
   clients over the limit get HTTP 429 and a message in their language.
 - At most `FONTIS_MAX_CONCURRENT_ANSWERS` (default 2) answers are generated at once; further
   questions get HTTP 503 with `Retry-After` instead of queueing on the GPU. A model call is retried
-  once and gives up after 90 seconds.
+  once, and a whole answer is cut off after `FONTIS_ANSWER_TIMEOUT` (default 100 s), even when the
+  connection to the model server hangs.
 - Five wrong passwords per minute from one address block further login attempts until the minute ends.
 - A deleted user, or one whose role changed, is signed out on the next request.
 - Use a long, unique `FONTIS_ADMIN_PASSWORD`: there is no password change page yet.

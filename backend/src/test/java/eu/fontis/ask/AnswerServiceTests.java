@@ -1,5 +1,6 @@
 package eu.fontis.ask;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class AnswerServiceTests {
 
-	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1024, 2, 1.0, 1.0, false, 2400);
+	private static final AskProperties PROPERTIES = new AskProperties(40, 6, 0.45, 8192, 1024, 2, Duration.ofSeconds(90), 1.0, 1.0, false, List.of(6000, 3000, 3000, 1200));
 
 	private static final List<Source> SOURCES = List.of(
 			new Source("32016R0679", "art_17", "GDPR", "Articolo 17", "Diritto alla cancellazione", "url17", "deu",

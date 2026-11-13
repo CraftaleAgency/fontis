@@ -95,17 +95,21 @@ instructive:
 
 - **Long articles do not fit.** Questions such as "which cybersecurity measures does NIS2 require?"
   have ten-item answers. The first reading blamed the prompt, which asks for at most six sentences,
-  but only 9 of the 38 partial answers use six sentences. The real cause is the budget of 2,400
+  but only 9 of the 38 partial answers use six sentences. One cause was the budget of 2,400
   characters per source: Article 5 of the AI Act is about 11,000 characters, so most prohibited
-  practices never reach the model. The same budget explains a wrong GDPR fine in French — the
-  higher tier of Article 83 was in a part of the article the model did not receive.
+  practices never reached the model, and the higher GDPR fine tier in French was in a part of
+  Article 83 the model did not receive. Raising the budget for the best-ranked sources fixed the
+  list and cut wrong answers from 5 to 2 — but most partial answers stayed partial, as the model
+  summarises articles it has in full, and with the whole of Article 83 in front of it the model
+  still quotes the lower French tier ([experiments](benchmark/v2-context.md)).
 - **Comparisons go wrong with the right sources.** Asked whether the GDPR or the AI Act has higher
   maximum fines, Fontis retrieved and cited both articles in all five languages. In French and
   Spanish the model quoted EUR 35 million or 7 % for the AI Act and EUR 20 million or 4 % for the
   GDPR — and concluded that the GDPR's fines are higher.
 
-So the fix that section 3 introduced is also the next bottleneck: how the context is assembled
-matters more than the size of the model. The comparison errors are the honest limit of a 14B model
+The same experiments showed the limit of the benchmark itself: between two runs of the same
+system, 10 to 13 of 120 verdicts change. With 24 base questions, effects of a couple of points are
+invisible, and a larger dataset matters more than the next tweak. The comparison errors are the honest limit of a 14B model
 on one consumer GPU: citations make the error visible and checkable, but they do not prevent it. A
 check of numeric claims against the cited text is the next lever there.
 

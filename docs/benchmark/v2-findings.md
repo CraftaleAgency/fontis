@@ -41,7 +41,7 @@ regulation is in the corpus, but both resemble NIS2 and the GDPR) and the amount
 fine (an enforcement decision, not legislation). All 30 unanswerable questions were refused in every
 language, 10 by the similarity threshold and 20 by the model itself.
 
-## 3. Most imperfect answers are missing context, not cut short
+## 3. Partial answers: lists, and less context than expected
 
 Of the 120 answers, 77 were judged correct, 38 partial and 5 incorrect. Partial verdicts
 concentrate on questions whose answer is a list: prohibited AI practices (8 items), obligations of
@@ -50,13 +50,18 @@ fundamental rights impact assessment.
 
 An earlier version of this page blamed the system prompt, which asks for *at most six sentences*.
 The answers do not support that: only 9 of the 38 partial answers use six sentences, and 22 use
-three or fewer. The main cause is the **context budget of 2,400 characters per source**. Long
+three or fewer. A cause that the answers do show is the **context budget of 2,400 characters per
+source**. Long
 articles are stored as many chunks and only two or three of them reach the model: Article 5 of the
 AI Act is 12 chunks and about 11,000 characters in English, so most of the prohibited practices are
 never in the prompt. The model cannot list what it was not shown.
 
-The next experiment is therefore context assembly — the whole top-ranked article, chunks chosen by
-similarity to the question — before any change to the prompt.
+**Follow-up ([experiments](v2-context.md)):** giving the best-ranked sources up to 6,000
+characters fixed the list of prohibited practices and the NIS2 measures and cut wrong answers from 5
+to 2, but left 40 answers partial, most of them short summaries of articles the model had in full.
+The context budget was one cause, not the main one; a prompt asking for complete lists did not help
+on balance either. Run-to-run variation (10–13 verdicts change between runs) is larger than most of
+these effects.
 
 ## 4. Two reasoning errors, one more context error
 
@@ -71,7 +76,9 @@ Asked for the maximum GDPR fine in French, Fontis quoted the lower tier of Artic
 million or 2 %). An earlier version of this page counted that as a reasoning error too. It is a
 context error: the French text of Article 83 is six chunks, the higher tier (EUR 20 million or 4 %)
 is in the fourth and fifth, and a replay of the context assembly shows the model received the
-second and third. It answered correctly from what it was given.
+second and third. It answered correctly from what it was given. (With the larger context of the
+[follow-up experiments](v2-context.md), the model sees the higher tier and still quotes the lower
+one, so this case is both.)
 
 ## 5. Languages
 

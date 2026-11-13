@@ -11,7 +11,11 @@ import java.util.stream.IntStream;
 import eu.fontis.ask.AskResponse.Citation;
 import eu.fontis.ask.AskResponse.Status;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class AnswerService {
+
+	private static final Logger log = LoggerFactory.getLogger(AnswerService.class);
 
 	static final String NO_ANSWER = "NO_ANSWER";
 
@@ -85,15 +91,21 @@ public class AnswerService {
 		}
 
 		// Several chunks per source, not just the best: the answer may be in another part of the article.
-		List<Source> withContext = this.retrieval.contexts(sources, this.properties.maxSourceChars());
+		// Better-ranked sources get larger budgets, so the article that answers usually reaches the model whole.
+		List<Source> withContext = new ArrayList<>();
+		for (int rank = 0; rank < sources.size(); rank++) {
+			withContext.addAll(this.retrieval.contexts(List.of(sources.get(rank)), this.properties.sourceChars(rank)));
+		}
 
 		start = System.nanoTime();
-		String raw = this.chatClient.prompt()
+		ChatResponse chat = this.chatClient.prompt()
 			.options(OllamaChatOptions.builder().disableThinking().numCtx(this.properties.numCtx())
 				.numPredict(this.properties.numPredict()))
 			.user(userPrompt(question, withContext))
 			.call()
-			.content();
+			.chatResponse();
+		warnIfContextIsFull(chat);
+		String raw = chat == null || chat.getResult() == null ? null : chat.getResult().getOutput().getText();
 		long generationMs = (System.nanoTime() - start) / 1_000_000;
 
 		String answer = THINK_BLOCK.matcher(raw == null ? "" : raw).replaceAll("").strip();
@@ -106,6 +118,18 @@ public class AnswerService {
 		Status status = cited.isEmpty() ? Status.UNCITED : Status.ANSWERED;
 		return new AskResponse(question, status, answer, cited, numbered, this.modelName, retrievalMs,
 				generationMs);
+	}
+
+	// Ollama silently drops the start of a prompt longer than the context window: the sources.
+	private void warnIfContextIsFull(ChatResponse chat) {
+		if (chat == null || chat.getMetadata() == null || chat.getMetadata().getUsage() == null) {
+			return;
+		}
+		Integer prompt = chat.getMetadata().getUsage().getPromptTokens();
+		if (prompt != null && prompt > this.properties.numCtx() - this.properties.numPredict()) {
+			log.warn("Prompt of {} tokens leaves less than num-predict in a context of {}: sources may be cut", prompt,
+					this.properties.numCtx());
+		}
 	}
 
 	static String userPrompt(String question, List<Source> sources) {

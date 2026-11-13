@@ -38,6 +38,9 @@ services:
       FONTIS_ADMIN_PASSWORD: ${FONTIS_ADMIN_PASSWORD:?set FONTIS_ADMIN_PASSWORD in .env}
       FONTIS_RATE_LIMIT_PER_MINUTE: ${FONTIS_RATE_LIMIT_PER_MINUTE:-20}
       FONTIS_MAX_CONCURRENT_ANSWERS: ${FONTIS_MAX_CONCURRENT_ANSWERS:-2}
+      FONTIS_ANSWER_TIMEOUT: ${FONTIS_ANSWER_TIMEOUT:-100s}
+      # Characters of each source given to the model, by rank (docs/benchmark/v2-context.md).
+      FONTIS_SOURCE_CHARS: ${FONTIS_SOURCE_CHARS:-6000,3000,3000,1200}
       # The stack is served over HTTPS (Caddy, or a tunnel in front of it).
       FONTIS_COOKIE_SECURE: ${FONTIS_COOKIE_SECURE:-true}
       FONTIS_LOG_RETENTION_DAYS: ${FONTIS_LOG_RETENTION_DAYS:-30}
