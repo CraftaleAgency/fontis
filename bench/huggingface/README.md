@@ -96,9 +96,11 @@ pgvector and `qwen3:14b` answering, on a single RTX 3060; judged by `gemma4:12b`
 | Answers judged correct / correct or partial | 64% / 96% |
 | Unanswerable questions refused | 30 / 30 |
 
-Most partial answers are incomplete because only part of a long article reached the model (a
-context budget of 2,400 characters per source), not because of retrieval; two errors are comparisons
-the model got wrong despite citing the right articles. A manual re-read suggests the judge is wrong
+Most partial answers are incomplete summaries rather than retrieval failures. Part of them came from
+a context budget of 2,400 characters per source; a larger budget fixed the long lists and cut wrong
+answers from 5 to 2, but most partial answers stayed partial and the average gain was within noise
+([experiments](https://github.com/CraftaleAgency/fontis/blob/main/docs/benchmark/v2-context.md)).
+Between two runs of the same system, 10 to 13 of the 120 verdicts change. A manual re-read suggests the judge is wrong
 in about one verdict in seven, so treat the correctness figures as approximate. Full report, per-language results and findings:
 [docs/benchmark](https://github.com/CraftaleAgency/fontis/tree/main/docs/benchmark).
 
