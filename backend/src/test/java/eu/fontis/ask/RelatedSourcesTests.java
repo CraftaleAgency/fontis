@@ -38,4 +38,11 @@ class RelatedSourcesTests {
 		assertThat(RelatedSources.pick(german, "der anbieter muss", 1000)).isEqualTo(german);
 	}
 
+	@Test
+	void letteredDefinitionsOfTheDigitalServicesAct() {
+		String dsa = "(c) ‘consumer’ means any natural person who is acting for purposes outside his or her trade;";
+
+		assertThat(RelatedSources.pick(dsa, "a consumer may complain", 1000)).isEqualTo(dsa);
+	}
+
 }

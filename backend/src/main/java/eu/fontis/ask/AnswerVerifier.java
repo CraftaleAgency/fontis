@@ -127,22 +127,38 @@ public class AnswerVerifier {
 
 			List<String> citedTexts = new ArrayList<>();
 			citedTexts.add(question);
-			sentence.citations().forEach(n -> citedTexts.add(sources.get(n - 1).content()));
+			// The model also saw each source's date of application and note (e.g. a later deferral).
+			sentence.citations().forEach(n -> {
+				Source source = sources.get(n - 1);
+				citedTexts.add(source.content());
+				citedTexts.add(java.util.Objects.toString(source.appliesFrom(), ""));
+				citedTexts.add(java.util.Objects.toString(source.applicabilityNote(), ""));
+			});
 			List<String> figuresMissing = Figures.missing(withoutMarkers(sentence.text()), citedTexts);
+
+			// Paragraphs 4 and 5 of GDPR Article 83 read alike but state different fines: when some cited
+			// passages contain every figure of the sentence, the best passage is chosen among those only.
+			Set<String> figures = new LinkedHashSet<>();
+			Figures.checked(withoutMarkers(sentence.text())).forEach(f -> figures.add(f.value()));
+			List<Passage> candidates = new ArrayList<>();
+			sentence.citations().forEach(n -> candidates.addAll(passages.getOrDefault(n, List.of())));
+			List<Passage> withFigures = figures.isEmpty() ? List.of()
+					: candidates.stream().filter(p -> Figures.values(p.text()).containsAll(figures)).toList();
+			if (!withFigures.isEmpty()) {
+				candidates.retainAll(withFigures);
+			}
 
 			Passage best = null;
 			double bestSimilarity = -1;
-			for (int n : sentence.citations()) {
-				for (Passage passage : passages.getOrDefault(n, List.of())) {
-					float[] passageVector = passageVectors.get(passage);
-					if (sentenceVector == null || passageVector == null) {
-						continue;
-					}
-					double similarity = cosine(sentenceVector, passageVector);
-					if (similarity > bestSimilarity) {
-						bestSimilarity = similarity;
-						best = passage;
-					}
+			for (Passage passage : candidates) {
+				float[] passageVector = passageVectors.get(passage);
+				if (sentenceVector == null || passageVector == null) {
+					continue;
+				}
+				double similarity = cosine(sentenceVector, passageVector);
+				if (similarity > bestSimilarity) {
+					bestSimilarity = similarity;
+					best = passage;
 				}
 			}
 			Double similarity = best == null ? null : Math.round(bestSimilarity * 1000) / 1000.0;

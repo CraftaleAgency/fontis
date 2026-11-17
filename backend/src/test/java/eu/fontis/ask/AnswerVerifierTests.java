@@ -63,6 +63,23 @@ class AnswerVerifierTests {
 		assertThat(verification.sentences()).extracting(SentenceCheck::verdict).containsExactly(Verdict.UNSUPPORTED);
 	}
 
+	@Test
+	void passageWithTheSentenceFiguresWinsOverASimilarOne() {
+		String article83 = """
+				4. Infringements shall be subject to fines up to 10 000 000 EUR or up to 2 % of turnover;
+				5. Infringements of the principles shall be subject to fines up to 20 000 000 EUR or up to 4 % of turnover;""";
+		Source source = new Source("32016R0679", "art_83", "GDPR", "Article 83", null, "url", "eng", article83, 0.03,
+				0.7, List.of(0));
+		AnswerVerifier verifier = new AnswerVerifier(new BagOfWords(), (celex, unitId, lang) -> article83,
+				new VerifyProperties(true, 0.5, 0.3, 1500));
+
+		Verification verification = verifier.verify("?",
+				"Infringements shall be subject to fines up to 20 000 000 EUR or up to 4 % of turnover [1].",
+				List.of(source), "eng");
+
+		assertThat(verification.sentences().get(0).pinpoint()).isEqualTo("Article 83(5)");
+	}
+
 	/** Texts sharing words get similar vectors. */
 	static final class BagOfWords implements EmbeddingModel {
 

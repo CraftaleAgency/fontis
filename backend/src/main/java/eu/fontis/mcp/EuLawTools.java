@@ -103,11 +103,15 @@ public class EuLawTools {
 		int n = limit == null ? 5 : Math.clamp(limit, 1, 10);
 		Access access = Access.only(this.jdbc.sql(PUBLIC_ACTS).query(String.class).list());
 		Retrieval.Result result = this.retrieval.search(question.strip(), language, n, Retrieval.Options.of(access));
+		// Below the guard the closest units are off-topic: return none, so they cannot be cited by mistake.
+		if (result.bestSimilarity() < this.properties.minSimilarity()) {
+			return new SearchResult(false, List.of(), NOTICE);
+		}
 		List<Hit> hits = this.retrieval.contexts(result.sources(), this.mcp.charsPerResult())
 			.stream()
 			.map(EuLawTools::hit)
 			.toList();
-		return new SearchResult(result.bestSimilarity() >= this.properties.minSimilarity(), hits, NOTICE);
+		return new SearchResult(true, hits, NOTICE);
 	}
 
 	@Tool(name = "get_eu_law_unit", description = """

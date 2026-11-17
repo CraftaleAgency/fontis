@@ -13,17 +13,18 @@
 
 ## Next: v0.2.0 — EU digital law, with the proof of each answer
 
-Written on the `next-steps` branch, not yet run or measured:
+On the `next-steps` branch. Built, tested (71 backend tests, 16 bench tests) and run locally
+against the full corpus on 17 November 2026; benchmark results below once measured.
 
 | Goal | Status |
 |---|---|
-| Corpus on Hugging Face: aligned units in 5 languages with references and dates — `fontis-bench corpus export`, [card](../bench/huggingface/corpus/README.md) | written, not uploaded |
-| MCP server: search EU law with citations from any assistant — [details](mcp.md) | written, not run |
+| Corpus on Hugging Face: aligned units in 5 languages with references and dates — `fontis-bench corpus export`, [card](../bench/huggingface/corpus/README.md) | exported (7,840 units), not uploaded |
+| MCP server: search EU law with citations from any assistant — [details](mcp.md) | runs locally; not yet public |
 | Each answer sentence checked against the cited text: pinpoint to paragraph and point, passage shown, figures checked — [details](answering.md#checking-each-sentence) | written, thresholds not calibrated |
 | Benchmark: share of sentences supported by the cited text (`eval support`) | written, not run |
 | Partial refusals ("the sources do not say …") | written, off by default |
 | Date of application of each act and article, today's date in the prompt; Digital Omnibus deferral noted | written; Omnibus dates to check against the Official Journal |
 | Definitions and referenced units as extra sources | written, off by default |
-| DORA, Cyber Resilience Act, Digital Services Act; dataset v2.1 with their two former trap questions | written, not fetched |
+| DORA, Cyber Resilience Act, Digital Services Act; dataset v2.1 with their two former trap questions | fetched, aligned in 5 languages, ingested |
 
 Postponed: SSO, OCR, connectors, national transpositions of NIS2, the 24 official languages.

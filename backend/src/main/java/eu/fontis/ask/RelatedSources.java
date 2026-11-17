@@ -24,9 +24,10 @@ import org.springframework.stereotype.Component;
 @Component
 class RelatedSources {
 
-	// "(3) ‘provider’ means", "(3) «fornitore»:", "3. „Anbieter“", "3) «proveedor»:".
+	// "(3) ‘provider’ means", "(3) «fornitore»:", "3. „Anbieter“", "3) «proveedor»:", and lettered points as in
+	// the Digital Services Act: "(a) ‘information society service’", "a) «servizio della società...»".
 	private static final Pattern DEFINITION = Pattern.compile(
-			"^\\(?\\d{1,3}[.)]?\\s*[‘'\"«„“‚]\\s*([^’'\"»“”‘‚]{3,80}?)\\s*[’'\"»“”‘]");
+			"^\\(?(?:\\d{1,3}|[a-z]{1,2})[.)]?\\s*[‘'\"«„“‚]\\s*([^’'\"»“”‘‚]{3,80}?)\\s*[’'\"»“”‘]");
 
 	private static final String UNIT = """
 			SELECT u.celex, u.unit_id, d.short_name, u.lang AS matched_lang, u.body,

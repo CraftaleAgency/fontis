@@ -34,6 +34,12 @@ class AnswerSentencesTests {
 	}
 
 	@Test
+	void germanDatesDoNotEndASentence() {
+		assertThat(AnswerSentences.splitLine("Sie gelten ab 2. Dezember 2027 [1]. Dies gilt auch für Anhang III [2]."))
+			.containsExactly("Sie gelten ab 2. Dezember 2027 [1].", "Dies gilt auch für Anhang III [2].");
+	}
+
+	@Test
 	void listItemsInheritTheCitationsOfTheirLeadIn() {
 		List<Sentence> sentences = AnswerSentences.split("""
 				The following practices are prohibited [1]:

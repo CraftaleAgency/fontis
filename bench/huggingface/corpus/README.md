@@ -46,7 +46,7 @@ configs:
 EU digital legislation split into **citable units** (articles, recitals and annexes) in **five languages**,
 **aligned across languages**: a unit has the same id in every language (`art_5`, `rct_42`, `anx_III`), so an
 article found in French can be cited in Italian, and a question in one language can be evaluated against a text
-in another.
+in another. Seven acts, **1,568 units per language** (536 articles, 1,008 recitals, 24 annexes), 7,840 in all.
 
 | CELEX | Act |
 |---|---|

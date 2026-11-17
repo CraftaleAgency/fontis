@@ -70,6 +70,10 @@ final class AnswerSentences {
 			if (c != '.' && c != '!' && c != '?') {
 				continue;
 			}
+			// German ordinals and dates: "ab 2. Dezember 2027", "der 3. Absatz".
+			if (c == '.' && afterShortNumber(line, i)) {
+				continue;
+			}
 			int end = i + 1;
 			Matcher markers = CITATIONS_AHEAD.matcher(line);
 			markers.region(end, line.length());
@@ -96,6 +100,16 @@ final class AnswerSentences {
 			}
 		}
 		return parts;
+	}
+
+	/** Whether the full stop at {@code dot} ends a number of one or two digits standing alone. */
+	static boolean afterShortNumber(String line, int dot) {
+		int start = dot;
+		while (start > 0 && Character.isDigit(line.charAt(start - 1))) {
+			start--;
+		}
+		int digits = dot - start;
+		return digits >= 1 && digits <= 2 && (start == 0 || Character.isWhitespace(line.charAt(start - 1)));
 	}
 
 	private static boolean startsSentence(char c) {

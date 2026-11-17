@@ -94,8 +94,7 @@ class AnswerServiceTests {
 	@Test
 	void partialAnswerNamesWhatTheSourcesDoNotSay() {
 		AskResponse response = withFeatures(new AnswerFeatures(0, 0, false, true),
-				"Sì, puoi chiederne la cancellazione [1].
-NOT_IN_SOURCES: i tempi di risposta del titolare")
+				"Sì, puoi chiederne la cancellazione [1].\nNOT_IN_SOURCES: i tempi di risposta del titolare")
 			.ask("Posso far cancellare i miei dati e in quanto tempo?", "ita", Access.EVERYTHING);
 
 		assertThat(response.status()).isEqualTo(Status.ANSWERED);
@@ -118,12 +117,8 @@ NOT_IN_SOURCES: i tempi di risposta del titolare")
 		withFeatures(new AnswerFeatures(0, 0, true, false), "Sì [1].").ask("Vale già?", "ita", Access.EVERYTHING);
 
 		String user = this.prompts.get(0).getUserMessage().getText();
-		assertThat(user).startsWith("Today's date: 2026-11-17
-
-Sources:")
-			.contains("Diritto alla cancellazione
-(Applies from 2018-05-25.)
-Die betroffene Person");
+		assertThat(user).startsWith("Today's date: 2026-11-17\n\nSources:")
+			.contains("Diritto alla cancellazione\n(Applies from 2018-05-25.)\nDie betroffene Person");
 	}
 
 	@Test
