@@ -150,7 +150,9 @@ def report(rows: list[dict]) -> None:
     print(f"\n{len(rows)} sentences: judge yes {len(yes)}, partly/no {len(other)}")
     print(f"AUC entailment: {auc([r['entailment'] for r in yes], [r['entailment'] for r in other]):.3f}")
     sims = [r for r in rows if r["similarity"] is not None]
-    print(f"AUC similarity: {auc([r['similarity'] for r in sims if r['judge'] == 'yes'], [r['similarity'] for r in sims if r['judge'] != 'yes']):.3f}")
+    sim_yes = [r["similarity"] for r in sims if r["judge"] == "yes"]
+    sim_other = [r["similarity"] for r in sims if r["judge"] != "yes"]
+    print(f"AUC similarity: {auc(sim_yes, sim_other):.3f}")
     print("\nthreshold  flagged  caught(not-yes)  false-alarms(yes)")
     for t in (0.1, 0.2, 0.3, 0.5, 0.7, 0.9):
         flagged = [r for r in rows if r["entailment"] < t]
