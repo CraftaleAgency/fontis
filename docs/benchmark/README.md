@@ -13,6 +13,7 @@ five languages, with new ids:
 
 150 questions, 130 answerable. v2 stays the default (`--dataset` selects v2.1), so that results remain comparable
 with the published ones; v2.1 needs the new acts in the corpus.
+Results: [v2.1 report](v2.1-next.md) · [findings](v2.1-findings.md).
 
 ## Supported sentences
 

@@ -30,6 +30,10 @@ class FiguresTests {
 	void referencesAndSmallNumbersAreNotFigures() {
 		assertThat(Figures.checked("Under Article 83(5) of Regulation (EU) 2016/679, within 3 months [1]."))
 			.isEmpty();
+		assertThat(Figures.checked("Les articles 111 et 113 s'appliquent à partir du 2 août 2026 [1]."))
+			.extracting(Figures.Figure::value)
+			.containsExactly("2026");
+		assertThat(Figures.checked("Gli articoli 6, 7 e 18 si applicano [1].")).isEmpty();
 		assertThat(Figures.checked("Notify within 72 hours, from 25 May 2018 [1].")).extracting(Figures.Figure::value)
 			.containsExactly("72", "25", "2018");
 	}

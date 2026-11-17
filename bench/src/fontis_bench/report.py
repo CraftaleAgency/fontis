@@ -113,6 +113,8 @@ def support_summary(answered: list[dict], support_rows: list[dict]) -> dict:
     judge = defaultdict(int)
     system = defaultdict(int)
     agree = []
+    # One row per answer: a run resumed or started twice may have appended the same answer again; keep the last.
+    support_rows = list({row["id"]: row for row in support_rows}.values())
     for row in support_rows:
         for s in row["sentences"]:
             judge[s["verdict"]] += 1

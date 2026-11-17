@@ -14,14 +14,14 @@
 ## Next: v0.2.0 — EU digital law, with the proof of each answer
 
 On the `next-steps` branch. Built, tested (71 backend tests, 16 bench tests) and run locally
-against the full corpus on 17 November 2026; benchmark results below once measured.
+against the full corpus on 17 November 2026; benchmark v2.1: [findings](benchmark/v2.1-findings.md).
 
 | Goal | Status |
 |---|---|
 | Corpus on Hugging Face: aligned units in 5 languages with references and dates — `fontis-bench corpus export`, [card](../bench/huggingface/corpus/README.md) | exported (7,840 units), not uploaded |
 | MCP server: search EU law with citations from any assistant — [details](mcp.md) | runs locally; not yet public |
-| Each answer sentence checked against the cited text: pinpoint to paragraph and point, passage shown, figures checked — [details](answering.md#checking-each-sentence) | written, thresholds not calibrated |
-| Benchmark: share of sentences supported by the cited text (`eval support`) | written, not run |
+| Each answer sentence checked against the cited text: pinpoint to paragraph and point, passage shown, figures checked — [details](answering.md#checking-each-sentence) | measured: figure check catches wrong citations; similarity locates but does not judge support — [findings](benchmark/v2.1-findings.md) |
+| Benchmark: share of sentences supported by the cited text (`eval support`) | 89% on v2.1 |
 | Partial refusals ("the sources do not say …") | written, off by default |
 | Date of application of each act and article, today's date in the prompt; Digital Omnibus deferral noted | written; Omnibus dates to check against the Official Journal |
 | Definitions and referenced units as extra sources | written, off by default |

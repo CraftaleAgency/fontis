@@ -112,11 +112,12 @@ fontis:
       partial-answers: ${FONTIS_PARTIAL_ANSWERS:false}
 
   # Check of each answer sentence against the cited text (AnswerVerifier): one embedding call per answer.
-  # Thresholds are a first guess, to be calibrated against the judge's support verdicts (eval support).
+  # Similarity locates the passage; it does not measure support (benchmark v2.1: judge-supported sentences
+  # median 0.79, others 0.77). Low thresholds only flag sentences far from any cited passage.
   verify:
     enabled: ${FONTIS_VERIFY:true}
-    supported: 0.62
-    weak: 0.50
+    supported: 0.55
+    weak: 0.45
     max-passage-chars: 1500
 
   mcp:

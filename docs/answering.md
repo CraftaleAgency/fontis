@@ -97,24 +97,27 @@ was given for the sources it cites. One embedding call per answer; the answer it
 4. **Figures.** Every amount, percentage, period and year in the sentence must appear in the cited
    text or in the question, however written ("20 000 000 EUR" = "20 milioni di euro"). Numbers in
    references ("Article 83(5)", "2016/679") and numbers below 10 (often written in words in the law)
-   are not checked.
+   are not checked; nor are numbers in lists of references ("Articles 111 and 113").
 
 | Verdict | Meaning |
 |---|---|
-| `SUPPORTED` | similarity ≥ `fontis.verify.supported` (0.62) |
-| `WEAK` | similarity ≥ `fontis.verify.weak` (0.50) |
+| `SUPPORTED` | similarity ≥ `fontis.verify.supported` (0.55) |
+| `WEAK` | similarity ≥ `fontis.verify.weak` (0.45) |
 | `UNSUPPORTED` | no cited passage is close |
 | `FIGURE_MISMATCH` | a figure is not in the cited text — the most harmful error found so far (v2: the lower GDPR fine tier quoted for the higher one) |
 | `UNCITED` | the sentence cites nothing |
 
 The web app shows the summary ("4 of 5 sentences match the cited text") and each sentence with its
-passage, open by default when a figure is missing or a sentence is unsupported. Prometheus counts
+passage, open by default when a figure is missing or a sentence is unsupported. When a passage of the
+cited text contains every figure of the sentence, it is chosen over closer ones (GDPR Article 83(4)
+and 83(5) read alike but state different fines). Prometheus counts
 `fontis_answer_sentences_total` by verdict.
 
-**Not calibrated yet.** The thresholds are a first guess. `fontis-bench eval support` asks the judge
-model whether each sentence is supported by the full cited unit; the report compares the two, and
-the thresholds should be set from that comparison. Embedding similarity measures closeness, not
-entailment: a sentence that negates its passage can still score high. The figure check is exact,
+**Measured on benchmark v2.1** ([findings](benchmark/v2.1-findings.md)): the figure check caught
+two real wrong citations; embedding similarity, however, does **not** tell supported sentences from
+unsupported ones (median 0.79 against 0.77, judged by `fontis-bench eval support`). Similarity is
+used to locate the passage and its pinpoint; the low thresholds only flag sentences far from every
+cited passage. Judging support needs an entailment model, not yet added. The figure check is exact,
 but it only catches a figure that is absent from the cited text, not one taken from the wrong
 paragraph of it.
 

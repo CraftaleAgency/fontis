@@ -25,7 +25,9 @@ final class Figures {
 			+ "|s?\\.)|annex(?:es|e)?|allegat[oi]|anh[aä]nge?|anexos?|considerand[oi]|recitals?|erwägungsgr[uü]nde?s?"
 			+ "|considérants?|paragraphs?|paragraf[oi]|absatz|abs\\.|comm[ai]|apartados?|par\\.|lettera|points?|punto"
 			+ "|chapters?|capo|kapitel|chapitre|capítulo|sections?|sezione|abschnitt|sección)\\s*\\d+[a-z]?"
-			+ "(?:\\s*\\(\\s*\\w{1,4}\\s*\\))*");
+			+ "(?:\\s*\\(\\s*\\w{1,4}\\s*\\))*"
+			// Lists and ranges: "Articles 111 and 113", "articoli 6, 7 e 8", "Artikel 5 bis 7".
+			+ "(?:\\s*(?:,|and|or|to|e|ed|o|a|und|oder|bis|et|ou|à|y|al)\\s*\\d+[a-z]?(?:\\s*\\(\\s*\\w{1,4}\\s*\\))*)*");
 
 	// "2016/679", "(EU) 2024/1689": act numbers.
 	private static final Pattern ACT_NUMBER = Pattern.compile("\\b\\d{2,4}/\\d{1,4}\\b");
