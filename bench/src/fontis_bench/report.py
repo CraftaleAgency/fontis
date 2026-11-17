@@ -104,6 +104,41 @@ def summarize(questions: list[dict], run_dir: Path) -> dict:
         },
         "models": sorted({a["model"] for a in answered if a.get("model")}),
         "judge": sorted({j["judge"] for j in judged.values()}),
+        "support": support_summary(answered, list(read_jsonl(run_dir / "support.jsonl"))),
+    }
+
+
+def support_summary(answered: list[dict], support_rows: list[dict]) -> dict:
+    """Sentence-level support: the judge's verdicts (support.jsonl) and Fontis' own (the response's verification)."""
+    judge = defaultdict(int)
+    system = defaultdict(int)
+    agree = []
+    for row in support_rows:
+        for s in row["sentences"]:
+            judge[s["verdict"]] += 1
+            if s.get("system") and s["verdict"] in ("yes", "partly", "no"):
+                # Fontis calls a sentence supported; the judge agrees if it says "yes".
+                agree.append((s["system"] == "SUPPORTED") == (s["verdict"] == "yes"))
+    verified = [a for a in answered if a.get("verification")]
+    for a in verified:
+        for s in a["verification"].get("sentences") or []:
+            system[s["verdict"]] += 1
+    cited = sum(judge[v] for v in ("yes", "partly", "no"))
+    sentences = sum(judge.values())
+    return {
+        "answers": len(support_rows),
+        "sentences": sentences,
+        "judge": dict(judge),
+        "supported": judge["yes"] / cited if cited else float("nan"),
+        "partly": judge["partly"] / cited if cited else float("nan"),
+        "uncited": judge["uncited"] / sentences if sentences else float("nan"),
+        "system": dict(system),
+        "agreement": mean(1.0 if x else 0.0 for x in agree),
+        "answers_with_figure_mismatch": mean(
+            1.0 if any(s["verdict"] == "FIGURE_MISMATCH" for s in a["verification"].get("sentences") or []) else 0.0
+            for a in verified
+        ),
+        "partial_refusals": sum(1 for a in answered if a.get("missing")),
     }
 
 
@@ -175,7 +210,36 @@ def markdown(summary: dict, title: str) -> str:
         f"p95 {lat['generation_p95']:.0f} ms.",
         "",
     ]
+    lines += support_markdown(summary.get("support") or {})
     return "\n".join(lines)
+
+
+def support_markdown(s: dict) -> list[str]:
+    if not s.get("sentences") and not s.get("system"):
+        return []
+    lines = ["## Supported sentences", ""]
+    if s.get("sentences"):
+        lines += [
+            f"{s['sentences']} sentences in {s['answers']} answers, each checked by the judge against the full text "
+            "of the units it cites.",
+            "",
+            "| Supported | Partly supported | Sentences without a citation |",
+            "|---:|---:|---:|",
+            f"| **{_pct(s['supported'])}** | {_pct(s['partly'])} | {_pct(s['uncited'])} |",
+            "",
+            "Supported and partly supported are shares of the sentences with a citation.",
+        ]
+    if s.get("system"):
+        verdicts = ", ".join(f"{k} {v}" for k, v in sorted(s["system"].items()))
+        lines += [
+            "",
+            f"- Fontis' own verification: {verdicts}.",
+            f"- Agreement with the judge (Fontis `SUPPORTED` ⇔ judge *yes*): {_pct(s['agreement'])}.",
+            f"- Answers with a figure not found in the cited text: {_pct(s['answers_with_figure_mismatch'])}.",
+        ]
+    if s.get("partial_refusals"):
+        lines.append(f"- Answers that say part of the question is not in the sources: {s['partial_refusals']}.")
+    return [*lines, ""]
 
 
 def write(questions: list[dict], run_dir: Path, summary_path: Path, report_path: Path, title: str) -> dict:

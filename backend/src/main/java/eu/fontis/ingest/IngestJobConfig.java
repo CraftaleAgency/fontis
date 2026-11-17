@@ -3,6 +3,7 @@ package eu.fontis.ingest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Types;
 import java.util.Map;
 
 import eu.fontis.ingest.ChunkEmbedder.UnitOfDocument;
@@ -65,16 +66,24 @@ class IngestJobConfig {
 			@Value("${fontis.ingest.corpus-dir}") String corpusDir) {
 		return new StepBuilder("documentsStep", jobRepository).tasklet((contribution, context) -> {
 			for (Map<String, String> doc : readDocuments(Path.of(corpusDir))) {
+				// Dates and notes are optional: a corpus built before they existed still loads.
 				jdbc.update("""
-						INSERT INTO source_document (celex, short_name, title) VALUES (?, ?, ?)
-						ON CONFLICT (celex) DO UPDATE SET short_name = EXCLUDED.short_name, title = EXCLUDED.title
-						""", doc.get("celex"), doc.get("short_name"), doc.get("title"));
+						INSERT INTO source_document (celex, short_name, title, entry_into_force, applies_from,
+						                             text_version, definitions_unit, note)
+						VALUES (?, ?, ?, CAST(? AS date), CAST(? AS date), CAST(? AS date), ?, ?)
+						ON CONFLICT (celex) DO UPDATE SET short_name = EXCLUDED.short_name, title = EXCLUDED.title,
+						    entry_into_force = EXCLUDED.entry_into_force, applies_from = EXCLUDED.applies_from,
+						    text_version = EXCLUDED.text_version, definitions_unit = EXCLUDED.definitions_unit,
+						    note = EXCLUDED.note
+						""", doc.get("celex"), doc.get("short_name"), doc.get("title"), doc.get("entry_into_force"),
+						doc.get("applies_from"), doc.get("text_version"), doc.get("definitions_unit"), doc.get("note"));
 				contribution.incrementWriteCount(1);
 			}
 			return RepeatStatus.FINISHED;
 		}, tx).build();
 	}
 
+	// Values are read as strings (dates as ISO strings); keys that are absent read as null.
 	private static java.util.List<Map<String, String>> readDocuments(Path corpusDir) throws IOException {
 		return JSON.readValue(Files.readString(corpusDir.resolve("documents.json")), new TypeReference<>() {
 		});
@@ -119,10 +128,14 @@ class IngestJobConfig {
 	JdbcBatchItemWriter<CorpusUnit> unitWriter(javax.sql.DataSource dataSource) {
 		return new JdbcBatchItemWriterBuilder<CorpusUnit>().dataSource(dataSource)
 			.sql("""
-					INSERT INTO source_unit (celex, lang, unit_id, unit_type, label, heading, body, url)
-					VALUES (:celex, :lang, :unitId, :unitType, :label, :heading, :body, :url)
+					INSERT INTO source_unit (celex, lang, unit_id, unit_type, label, heading, body, url, refs,
+					                         applies_from, applicability_note)
+					VALUES (:celex, :lang, :unitId, :unitType, :label, :heading, :body, :url, :refs,
+					        CAST(:appliesFrom AS date), :applicabilityNote)
 					ON CONFLICT (celex, lang, unit_id) DO UPDATE SET unit_type = EXCLUDED.unit_type,
-					    label = EXCLUDED.label, heading = EXCLUDED.heading, body = EXCLUDED.body, url = EXCLUDED.url
+					    label = EXCLUDED.label, heading = EXCLUDED.heading, body = EXCLUDED.body, url = EXCLUDED.url,
+					    refs = EXCLUDED.refs, applies_from = EXCLUDED.applies_from,
+					    applicability_note = EXCLUDED.applicability_note
 					""")
 			.itemSqlParameterSourceProvider(u -> new MapSqlParameterSource().addValue("celex", u.celex())
 				.addValue("lang", u.lang())
@@ -131,7 +144,10 @@ class IngestJobConfig {
 				.addValue("label", u.label())
 				.addValue("heading", u.heading())
 				.addValue("body", u.body())
-				.addValue("url", u.url()))
+				.addValue("url", u.url())
+				.addValue("refs", u.references().toArray(String[]::new), Types.ARRAY)
+				.addValue("appliesFrom", u.appliesFrom(), Types.VARCHAR)
+				.addValue("applicabilityNote", u.applicabilityNote(), Types.VARCHAR))
 			.build();
 	}
 

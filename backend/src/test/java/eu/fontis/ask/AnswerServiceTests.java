@@ -1,6 +1,9 @@
 package eu.fontis.ask;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -86,6 +89,63 @@ class AnswerServiceTests {
 
 		assertThat(response.answer()).isEqualTo("Sì [1][9].");
 		assertThat(response.citations()).extracting(AskResponse.Citation::n).containsExactly(1);
+	}
+
+	@Test
+	void partialAnswerNamesWhatTheSourcesDoNotSay() {
+		AskResponse response = withFeatures(new AnswerFeatures(0, 0, false, true),
+				"Sì, puoi chiederne la cancellazione [1].
+NOT_IN_SOURCES: i tempi di risposta del titolare")
+			.ask("Posso far cancellare i miei dati e in quanto tempo?", "ita", Access.EVERYTHING);
+
+		assertThat(response.status()).isEqualTo(Status.ANSWERED);
+		assertThat(response.answer()).isEqualTo("Sì, puoi chiederne la cancellazione [1].");
+		assertThat(response.missing()).isEqualTo("i tempi di risposta del titolare");
+		assertThat(this.prompts.get(0).getSystemMessage().getText()).contains("NOT_IN_SOURCES:");
+	}
+
+	@Test
+	void onlyAMissingLineIsARefusal() {
+		AskResponse response = withFeatures(new AnswerFeatures(0, 0, false, true), "NOT_IN_SOURCES: everything")
+			.ask("Quanto costa una licenza?", "ita", Access.EVERYTHING);
+
+		assertThat(response.status()).isEqualTo(Status.NO_ANSWER);
+		assertThat(response.missing()).isEqualTo("everything");
+	}
+
+	@Test
+	void applicabilityGivesTodayAndTheDateOfEachSource() {
+		withFeatures(new AnswerFeatures(0, 0, true, false), "Sì [1].").ask("Vale già?", "ita", Access.EVERYTHING);
+
+		String user = this.prompts.get(0).getUserMessage().getText();
+		assertThat(user).startsWith("Today's date: 2026-11-17
+
+Sources:")
+			.contains("Diritto alla cancellazione
+(Applies from 2018-05-25.)
+Die betroffene Person");
+	}
+
+	@Test
+	void withoutFeaturesThePromptIsUnchanged() {
+		service(0.70, "Sì [1].").ask("Vale già?", "ita", Access.EVERYTHING);
+
+		assertThat(this.prompts.get(0).getUserMessage().getText()).startsWith("Sources:").doesNotContain("Applies from");
+		assertThat(this.prompts.get(0).getSystemMessage().getText()).isEqualTo(AnswerService.SYSTEM_PROMPT);
+	}
+
+	private AnswerService withFeatures(AnswerFeatures features, String modelReply) {
+		List<Source> dated = List.of(
+				new Source("32016R0679", "art_17", "GDPR", "Articolo 17", "Diritto alla cancellazione", "url17", "deu",
+						"Die betroffene Person hat das Recht ...", 0.03, 0.70, List.of(0), "2018-05-25", null));
+		Retrieval retrieval = (question, lang, limit, mode) -> new Retrieval.Result(dated, 0.70);
+		ChatModel model = prompt -> {
+			this.prompts.add(prompt);
+			return new ChatResponse(List.of(new Generation(new AssistantMessage(modelReply))));
+		};
+		Clock clock = Clock.fixed(Instant.parse("2026-11-17T10:00:00Z"), ZoneOffset.UTC);
+		return new AnswerService(retrieval, ChatClient.builder(model), PROPERTIES, "test-model", AskTracing.NONE,
+				features, null, null, clock);
 	}
 
 	private AnswerService service(double bestSimilarity, String modelReply) {

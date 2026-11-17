@@ -11,6 +11,44 @@
 
 Languages: English, Italian, German, French, Spanish — 940 units per language, 4,700 in total.
 
+Added after v0.1.0 (unit counts are printed by `corpus build`):
+
+| Document | CELEX |
+|---|---|
+| DORA — Regulation (EU) 2022/2554 | `32022R2554` |
+| Cyber Resilience Act — Regulation (EU) 2024/2847 | `32024R2847` |
+| Digital Services Act — Regulation (EU) 2022/2065 | `32022R2065` |
+
+**eIDAS 2 is not included.** Regulation (EU) 2024/1183 is an amending act: its articles say how to change
+Regulation (EU) No 910/2014 ("Article 3 is amended as follows"), so they cannot answer a question on their own.
+It needs the consolidated text of Regulation 910/2014, which CELLAR publishes with a different structure; the parser
+does not handle it yet.
+
+### What each unit and document carries
+
+`corpus build` adds, besides the text:
+
+| Field | Where | Meaning |
+|---|---|---|
+| `references` | unit | Other units of the same act that the text refers to ("Articles 6 to 8", "Annex III"), found with rules in the English text and copied to every language. A reference followed by another act ("of Regulation (EU) 2016/679", "TFEU") is left out |
+| `applies_from` | unit | Date from which the unit applies when it differs from the document's, e.g. AI Act Article 5 from 2 February 2025; `null` otherwise |
+| `applicability_note` | unit | Staggered application or later amendments, in English, e.g. the AI Act high-risk rules postponed by the Digital Omnibus |
+| `entry_into_force`, `applies_from` | document | Dates from the act's final provisions |
+| `text_version` | document | Publication date in the Official Journal of the text used |
+| `definitions_unit` | document | The article with the definitions (`art_3` in the AI Act, `art_4` in the GDPR) |
+| `note` | document | How the act applies, e.g. a directive through national transposition |
+
+The dates are curated by hand in `bench/src/fontis_bench/applicability.py`, with the article they come from.
+**Texts are not consolidated**: they are as published, and later amendments are only described in the notes. The AI
+Act was amended by Regulation (EU) 2026/1744 (Digital Omnibus on AI); the dates of that amendment in the notes come
+from secondary sources and must be checked against the Official Journal.
+
+### Hugging Face
+
+`corpus export` writes the built corpus as a Hugging Face dataset folder (`units/<lang>.jsonl`,
+`documents.jsonl`); the dataset card and the upload command are in
+[`bench/huggingface/corpus`](../bench/huggingface/corpus/README.md).
+
 ### How it is downloaded
 
 The EUR-Lex website rejects automated requests, so the corpus comes from **CELLAR**, the

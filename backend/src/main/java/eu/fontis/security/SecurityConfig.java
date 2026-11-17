@@ -2,6 +2,9 @@ package eu.fontis.security;
 
 import java.util.List;
 
+import eu.fontis.mcp.McpProperties;
+import eu.fontis.mcp.McpRateLimitFilter;
+
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
@@ -38,7 +41,7 @@ class SecurityConfig {
 	// Only in the web application: the ingestion job runs without a web server.
 	@Bean
 	@ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
-	SecurityFilterChain securityFilterChain(HttpSecurity http, Users users) throws Exception {
+	SecurityFilterChain securityFilterChain(HttpSecurity http, Users users, McpProperties mcp) throws Exception {
 		return http
 			.authorizeHttpRequests(auth -> auth
 				// Actuator listens on the internal management port only (management.server.port).
@@ -48,14 +51,18 @@ class SecurityConfig {
 				.requestMatchers("/api/auth/**").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/ask").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/documents").permitAll()
+				// MCP tools search public EU legislation only, whoever calls them (see EuLawTools).
+				.requestMatchers("/mcp", "/mcp/**").permitAll()
 				// Retrieval with ranking parameters is a benchmark tool, not part of the web app.
 				.requestMatchers("/api/search", "/api/log/**", "/api/admin/**").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.POST, "/api/documents").hasRole("ADMIN")
 				.requestMatchers(HttpMethod.DELETE, "/api/documents/**").hasRole("ADMIN")
 				.anyRequest().authenticated())
-			.csrf(csrf -> csrf.spa())
+			// MCP clients send no cookies and act as anonymous users: no session to protect from CSRF.
+			.csrf(csrf -> csrf.spa().ignoringRequestMatchers("/mcp", "/mcp/**"))
 			.securityContext(context -> context.securityContextRepository(securityContextRepository()))
 			.addFilterBefore(new CurrentUserFilter(users), AnonymousAuthenticationFilter.class)
+			.addFilterBefore(new McpRateLimitFilter(mcp), AnonymousAuthenticationFilter.class)
 			// An API: 401 instead of a redirect to a login page.
 			.exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 			.formLogin(form -> form.disable())

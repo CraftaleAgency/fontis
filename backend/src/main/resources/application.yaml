@@ -46,6 +46,19 @@ spring:
       embedding:
         options:
           model: ${FONTIS_OLLAMA_EMBEDDING:bge-m3}
+    mcp:
+      # MCP server: EU legislation search as tools for any MCP client (eu.fontis.mcp.EuLawTools).
+      server:
+        enabled: ${FONTIS_MCP_ENABLED:true}
+        name: fontis-eu-law
+        version: 0.2.0
+        type: SYNC
+        protocol: STREAMABLE
+        instructions: >-
+          Search EU digital legislation and read its articles. Answer only from the returned text, cite the
+          article and link, and say so when the legislation does not cover the question.
+        streamable-http:
+          mcp-endpoint: /mcp
 
 fontis:
   # Traces for Langfuse, see docs/observability.md. Questions, sources and answers are not sent unless enabled.
@@ -86,6 +99,30 @@ fontis:
     text-weight: 0.0
     recital-weight: 0.6
     sum-languages: false
+
+    # Optional parts of answering (AnswerFeatures), off until measured on the benchmark, except the dates.
+    features:
+      # Units that the best source refers to (e.g. Annex III), added as extra sources.
+      references: ${FONTIS_FOLLOW_REFERENCES:0}
+      # Characters of definitions (e.g. AI Act Article 3) of terms used in the sources, added as one extra source.
+      definition-chars: ${FONTIS_DEFINITION_CHARS:0}
+      # From when each source applies, and today's date, in the prompt.
+      applicability: ${FONTIS_APPLICABILITY:true}
+      # Answer the covered part of a question and name what the sources do not say.
+      partial-answers: ${FONTIS_PARTIAL_ANSWERS:false}
+
+  # Check of each answer sentence against the cited text (AnswerVerifier): one embedding call per answer.
+  # Thresholds are a first guess, to be calibrated against the judge's support verdicts (eval support).
+  verify:
+    enabled: ${FONTIS_VERIFY:true}
+    supported: 0.62
+    weak: 0.50
+    max-passage-chars: 1500
+
+  mcp:
+    # Text returned for each search result.
+    chars-per-result: 3000
+    rate-limit-per-minute: ${FONTIS_MCP_RATE_LIMIT_PER_MINUTE:60}
 
   auth:
     # Failed login attempts per client per minute (0 = no limit).

@@ -10,3 +10,20 @@
 | 6 | Bring-your-own documents: upload, users, groups and per-document permissions — [details](documents-and-access.md) | ✅ |
 | 7 | Docker Compose for EU deployment, Prometheus and Grafana dashboard, Langfuse tracing, rate limiting; public demo prepared, not yet published — [deployment](deployment.md), [observability](observability.md) | ✅ |
 | 8 | Benchmark v2: 150 questions with a held-out part, published on [Hugging Face](https://huggingface.co/datasets/Fla00/fontis-eu-law-qa) — [findings](benchmark/v2-findings.md); [technical write-up](write-up.md); release v0.1.0 | ✅ |
+
+## Next: v0.2.0 — EU digital law, with the proof of each answer
+
+Written on the `next-steps` branch, not yet run or measured:
+
+| Goal | Status |
+|---|---|
+| Corpus on Hugging Face: aligned units in 5 languages with references and dates — `fontis-bench corpus export`, [card](../bench/huggingface/corpus/README.md) | written, not uploaded |
+| MCP server: search EU law with citations from any assistant — [details](mcp.md) | written, not run |
+| Each answer sentence checked against the cited text: pinpoint to paragraph and point, passage shown, figures checked — [details](answering.md#checking-each-sentence) | written, thresholds not calibrated |
+| Benchmark: share of sentences supported by the cited text (`eval support`) | written, not run |
+| Partial refusals ("the sources do not say …") | written, off by default |
+| Date of application of each act and article, today's date in the prompt; Digital Omnibus deferral noted | written; Omnibus dates to check against the Official Journal |
+| Definitions and referenced units as extra sources | written, off by default |
+| DORA, Cyber Resilience Act, Digital Services Act; dataset v2.1 with their two former trap questions | written, not fetched |
+
+Postponed: SSO, OCR, connectors, national transpositions of NIS2, the 24 official languages.

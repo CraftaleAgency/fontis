@@ -12,7 +12,25 @@ export type Citation = {
   heading: string | null;
   url: string;
   matchedLang: string;
+  appliesFrom?: string | null;
+  applicabilityNote?: string | null;
 };
+
+export type Verdict = "SUPPORTED" | "WEAK" | "UNSUPPORTED" | "FIGURE_MISMATCH" | "UNCITED";
+
+/** One sentence of the answer checked against the text it cites (see docs/answering.md). */
+export type SentenceCheck = {
+  text: string;
+  citations: number[];
+  n: number | null;
+  pinpoint: string | null;
+  passage: string | null;
+  similarity: number | null;
+  figuresMissing: string[];
+  verdict: Verdict;
+};
+
+export type Verification = { sentences: SentenceCheck[]; supported: number; total: number };
 
 export type AskResponse = {
   question: string;
@@ -23,6 +41,8 @@ export type AskResponse = {
   model: string | null;
   retrievalMs: number;
   generationMs: number;
+  verification?: Verification | null;
+  missing?: string | null;
 };
 
 export type LogEntry = {

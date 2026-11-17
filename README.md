@@ -4,6 +4,9 @@
 European language and get answers that cite the exact source — with data and models under your control.
 
 > First release, v0.1.0 — see the [roadmap](docs/roadmap.md) and the [technical write-up](docs/write-up.md).
+> The `next-steps` branch adds a check of every answer sentence against the cited text, an MCP server,
+> dates of application and three more acts; it is written but not yet run or measured — see
+> [what is next](docs/roadmap.md#next-v020--eu-digital-law-with-the-proof-of-each-answer).
 
 ![Fontis answering in Italian, citing AI Act Article 5 found in the French text](docs/images/ask-it.png)
 
@@ -11,6 +14,9 @@ European language and get answers that cite the exact source — with data and m
 
 - **Cited or nothing.** Every answer points to the article, paragraph and document it comes from.
   When no source supports an answer, Fontis says so instead of guessing.
+- **Checked, not just cited** *(next-steps, not yet measured).* Each sentence of an answer is matched
+  to the passage it cites — down to the paragraph and point, "Article 5(1)(c)" — and every amount,
+  percentage or deadline must appear in the cited text. See [checking each sentence](docs/answering.md#checking-each-sentence).
 - **Multilingual by design.** Ask in Italian, find the answer in a German document, read it in Italian.
 - **Sovereign.** Runs on your own servers or on EU clouds, with local open-weight models. An EU cloud
   provider (Mistral) is planned. Documents never have to leave the EU.
@@ -20,6 +26,8 @@ European language and get answers that cite the exact source — with data and m
   built in, not bolted on.
 - **Measured.** A public, multilingual benchmark shows how well it works on EU law;
   measuring it on your own documents is planned.
+- **Usable from any assistant** *(next-steps, not yet run).* An [MCP server](docs/mcp.md) exposes the
+  search over EU legislation, with citations and dates of application, to Claude and other MCP clients.
 
 ## Benchmark
 
@@ -52,7 +60,10 @@ wrong, and how it shaped the ranking: [v2 findings](docs/benchmark/v2-findings.m
 ## Demo corpus
 
 The EU AI Act, GDPR, Data Act and NIS2 in English, Italian, German, French and Spanish:
-**4,700 citable units**, aligned across languages. Downloaded from the Publications Office of the EU — see
+**4,700 citable units**, aligned across languages. The `next-steps` branch adds DORA, the Cyber
+Resilience Act and the Digital Services Act, the date from which each act and article applies (with
+a note where it changed, such as the AI Act's high-risk deferral by Regulation (EU) 2026/1744), and
+the references between articles; `fontis-bench corpus export` prepares the corpus for Hugging Face. Downloaded from the Publications Office of the EU — see
 [data sources](docs/data-sources.md).
 
 ## Quick start
@@ -120,7 +131,7 @@ backend/   Spring Boot service: ingestion, retrieval, answers, answer log
 frontend/  Next.js web app in five languages
 bench/     Python: corpus tooling, benchmark dataset and evaluation
 deploy/    Docker Compose stack, Caddy, Prometheus and Grafana
-docs/      Roadmap, data sources, design notes
+docs/      Roadmap, data sources, design notes, MCP server
 ```
 
 ## License

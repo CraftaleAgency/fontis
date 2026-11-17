@@ -1,3 +1,5 @@
+import type { Verdict } from "./api";
+
 // UI languages and their texts. The backend uses ISO 639-2 codes for source labels and links.
 
 export const locales = ["en", "it", "de", "fr", "es"] as const;
@@ -46,6 +48,14 @@ export type Dictionary = {
   noSource: string;
   noAnswer: string;
   uncited: string;
+  check: {
+    summary: (supported: number, total: number) => string;
+    verdict: Record<Verdict, string>;
+    figures: (figures: string) => string;
+    passage: string;
+    missing: string;
+    appliesFrom: (date: string) => string;
+  };
   error: string;
   tooMany: string;
   timing: (retrievalMs: number, generationMs: number, model: string | null) => string;
@@ -110,8 +120,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Answers on EU legislation, with the exact source",
     nav: { ask: "Ask", log: "Answer log" },
     disclosure:
-      "You are interacting with an AI system. Answers are generated from the AI Act, GDPR, Data Act and NIS2 and may contain errors: always check the cited sources. This is not legal advice.",
-    placeholder: "Ask a question about the AI Act, GDPR, Data Act or NIS2…",
+      "You are interacting with an AI system. Answers are generated from EU digital legislation (AI Act, GDPR, Data Act, NIS2, DORA, Cyber Resilience Act, Digital Services Act) and may contain errors: always check the cited sources. This is not legal advice.",
+    placeholder: "Ask a question about EU digital legislation…",
     send: "Ask",
     thinking: "Searching the legislation and writing an answer…",
     examplesTitle: "Try a question",
@@ -128,6 +138,20 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noSource: "No source in the corpus is close enough to this question, so no answer was generated.",
     noAnswer: "The sources found do not contain the answer to this question.",
     uncited: "This answer cites no source and should not be relied on.",
+    check: {
+      summary: (s, t) => `${s} of ${t} sentences match the cited text`,
+      verdict: {
+        SUPPORTED: "matches the cited text",
+        WEAK: "only partly matches the cited text",
+        UNSUPPORTED: "not found in the cited text",
+        FIGURE_MISMATCH: "figure not in the cited text",
+        UNCITED: "no source cited",
+      },
+      figures: (f) => `Not in the cited text: ${f}`,
+      passage: "Cited text",
+      missing: "Not in the sources:",
+      appliesFrom: (d) => `applies from ${d}`,
+    },
     error: "Something went wrong. Please try again.",
     tooMany: "Too many questions in a short time. Please wait a minute and try again.",
     timing: (r, g, m) => `Search ${r} ms · answer ${g} ms${m ? ` · ${m}` : ""}`,
@@ -188,8 +212,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Risposte sulla normativa UE, con la fonte esatta",
     nav: { ask: "Chiedi", log: "Registro" },
     disclosure:
-      "Stai interagendo con un sistema di intelligenza artificiale. Le risposte sono generate a partire da AI Act, GDPR, Data Act e NIS2 e possono contenere errori: verifica sempre le fonti citate. Non è una consulenza legale.",
-    placeholder: "Fai una domanda su AI Act, GDPR, Data Act o NIS2…",
+      "Stai interagendo con un sistema di intelligenza artificiale. Le risposte sono generate a partire dalla normativa digitale UE (AI Act, GDPR, Data Act, NIS2, DORA, Cyber Resilience Act, Digital Services Act) e possono contenere errori: verifica sempre le fonti citate. Non è una consulenza legale.",
+    placeholder: "Fai una domanda sulla normativa digitale UE…",
     send: "Chiedi",
     thinking: "Cerco nella normativa e scrivo la risposta…",
     examplesTitle: "Prova una domanda",
@@ -206,6 +230,20 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noSource: "Nessuna fonte del corpus è abbastanza vicina a questa domanda: nessuna risposta è stata generata.",
     noAnswer: "Le fonti trovate non contengono la risposta a questa domanda.",
     uncited: "Questa risposta non cita fonti e non è affidabile.",
+    check: {
+      summary: (s, t) => `${s} frasi su ${t} corrispondono al testo citato`,
+      verdict: {
+        SUPPORTED: "corrisponde al testo citato",
+        WEAK: "corrisponde solo in parte al testo citato",
+        UNSUPPORTED: "non trovata nel testo citato",
+        FIGURE_MISMATCH: "cifra assente nel testo citato",
+        UNCITED: "nessuna fonte citata",
+      },
+      figures: (f) => `Non presente nel testo citato: ${f}`,
+      passage: "Testo citato",
+      missing: "Non presente nelle fonti:",
+      appliesFrom: (d) => `si applica dal ${d}`,
+    },
     error: "Si è verificato un errore. Riprova.",
     tooMany: "Troppe domande in poco tempo. Attendi un minuto e riprova.",
     timing: (r, g, m) => `Ricerca ${r} ms · risposta ${g} ms${m ? ` · ${m}` : ""}`,
@@ -267,8 +305,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Antworten zum EU-Recht, mit der genauen Quelle",
     nav: { ask: "Fragen", log: "Antwortprotokoll" },
     disclosure:
-      "Sie interagieren mit einem KI-System. Die Antworten werden aus KI-Verordnung, DSGVO, Data Act und NIS2 erzeugt und können Fehler enthalten: Prüfen Sie immer die zitierten Quellen. Dies ist keine Rechtsberatung.",
-    placeholder: "Stellen Sie eine Frage zu KI-Verordnung, DSGVO, Data Act oder NIS2…",
+      "Sie interagieren mit einem KI-System. Die Antworten werden aus dem EU-Digitalrecht (KI-Verordnung, DSGVO, Data Act, NIS2, DORA, Cyberresilienz-Verordnung, Gesetz über digitale Dienste) erzeugt und können Fehler enthalten: Prüfen Sie immer die zitierten Quellen. Dies ist keine Rechtsberatung.",
+    placeholder: "Stellen Sie eine Frage zum EU-Digitalrecht…",
     send: "Fragen",
     thinking: "Durchsuche die Rechtsakte und formuliere eine Antwort…",
     examplesTitle: "Beispielfragen",
@@ -285,6 +323,20 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noSource: "Keine Quelle im Korpus passt ausreichend zu dieser Frage, daher wurde keine Antwort erzeugt.",
     noAnswer: "Die gefundenen Quellen enthalten keine Antwort auf diese Frage.",
     uncited: "Diese Antwort zitiert keine Quelle und ist nicht verlässlich.",
+    check: {
+      summary: (s, t) => `${s} von ${t} Sätzen stimmen mit dem zitierten Text überein`,
+      verdict: {
+        SUPPORTED: "stimmt mit dem zitierten Text überein",
+        WEAK: "stimmt nur teilweise mit dem zitierten Text überein",
+        UNSUPPORTED: "nicht im zitierten Text gefunden",
+        FIGURE_MISMATCH: "Zahl nicht im zitierten Text",
+        UNCITED: "keine Quelle zitiert",
+      },
+      figures: (f) => `Nicht im zitierten Text: ${f}`,
+      passage: "Zitierter Text",
+      missing: "Nicht in den Quellen:",
+      appliesFrom: (d) => `gilt ab ${d}`,
+    },
     error: "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
     tooMany: "Zu viele Fragen in kurzer Zeit. Bitte warten Sie eine Minute.",
     timing: (r, g, m) => `Suche ${r} ms · Antwort ${g} ms${m ? ` · ${m}` : ""}`,
@@ -346,8 +398,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Des réponses sur le droit de l'UE, avec la source exacte",
     nav: { ask: "Demander", log: "Journal des réponses" },
     disclosure:
-      "Vous interagissez avec un système d'intelligence artificielle. Les réponses sont générées à partir de l'AI Act, du RGPD, du Data Act et de NIS2 et peuvent contenir des erreurs : vérifiez toujours les sources citées. Ceci n'est pas un conseil juridique.",
-    placeholder: "Posez une question sur l'AI Act, le RGPD, le Data Act ou NIS2…",
+      "Vous interagissez avec un système d'intelligence artificielle. Les réponses sont générées à partir du droit numérique de l'UE (AI Act, RGPD, Data Act, NIS2, DORA, règlement sur la cyberrésilience, règlement sur les services numériques) et peuvent contenir des erreurs : vérifiez toujours les sources citées. Ceci n'est pas un conseil juridique.",
+    placeholder: "Posez une question sur le droit numérique de l'UE…",
     send: "Demander",
     thinking: "Recherche dans la législation et rédaction de la réponse…",
     examplesTitle: "Essayez une question",
@@ -364,6 +416,20 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noSource: "Aucune source du corpus n'est assez proche de cette question : aucune réponse n'a été générée.",
     noAnswer: "Les sources trouvées ne contiennent pas la réponse à cette question.",
     uncited: "Cette réponse ne cite aucune source et n'est pas fiable.",
+    check: {
+      summary: (s, t) => `${s} phrases sur ${t} correspondent au texte cité`,
+      verdict: {
+        SUPPORTED: "correspond au texte cité",
+        WEAK: "ne correspond qu'en partie au texte cité",
+        UNSUPPORTED: "absente du texte cité",
+        FIGURE_MISMATCH: "chiffre absent du texte cité",
+        UNCITED: "aucune source citée",
+      },
+      figures: (f) => `Absent du texte cité : ${f}`,
+      passage: "Texte cité",
+      missing: "Absent des sources :",
+      appliesFrom: (d) => `s'applique à partir du ${d}`,
+    },
     error: "Une erreur s'est produite. Veuillez réessayer.",
     tooMany: "Trop de questions en peu de temps. Veuillez patienter une minute.",
     timing: (r, g, m) => `Recherche ${r} ms · réponse ${g} ms${m ? ` · ${m}` : ""}`,
@@ -425,8 +491,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     tagline: "Respuestas sobre la legislación de la UE, con la fuente exacta",
     nav: { ask: "Preguntar", log: "Registro de respuestas" },
     disclosure:
-      "Está interactuando con un sistema de inteligencia artificial. Las respuestas se generan a partir del AI Act, el RGPD, el Data Act y NIS2 y pueden contener errores: compruebe siempre las fuentes citadas. Esto no es asesoramiento jurídico.",
-    placeholder: "Haga una pregunta sobre el AI Act, el RGPD, el Data Act o NIS2…",
+      "Está interactuando con un sistema de inteligencia artificial. Las respuestas se generan a partir de la legislación digital de la UE (AI Act, RGPD, Data Act, NIS2, DORA, Reglamento de Ciberresiliencia, Reglamento de Servicios Digitales) y pueden contener errores: compruebe siempre las fuentes citadas. Esto no es asesoramiento jurídico.",
+    placeholder: "Haga una pregunta sobre la legislación digital de la UE…",
     send: "Preguntar",
     thinking: "Buscando en la legislación y redactando la respuesta…",
     examplesTitle: "Pruebe una pregunta",
@@ -443,6 +509,20 @@ export const dictionaries: Record<Locale, Dictionary> = {
     noSource: "Ninguna fuente del corpus es lo bastante cercana a esta pregunta: no se ha generado ninguna respuesta.",
     noAnswer: "Las fuentes encontradas no contienen la respuesta a esta pregunta.",
     uncited: "Esta respuesta no cita ninguna fuente y no es fiable.",
+    check: {
+      summary: (s, t) => `${s} de ${t} frases coinciden con el texto citado`,
+      verdict: {
+        SUPPORTED: "coincide con el texto citado",
+        WEAK: "coincide solo en parte con el texto citado",
+        UNSUPPORTED: "no se encuentra en el texto citado",
+        FIGURE_MISMATCH: "cifra ausente del texto citado",
+        UNCITED: "ninguna fuente citada",
+      },
+      figures: (f) => `Ausente del texto citado: ${f}`,
+      passage: "Texto citado",
+      missing: "No está en las fuentes:",
+      appliesFrom: (d) => `se aplica desde el ${d}`,
+    },
     error: "Se ha producido un error. Inténtelo de nuevo.",
     tooMany: "Demasiadas preguntas en poco tiempo. Espere un minuto e inténtelo de nuevo.",
     timing: (r, g, m) => `Búsqueda ${r} ms · respuesta ${g} ms${m ? ` · ${m}` : ""}`,

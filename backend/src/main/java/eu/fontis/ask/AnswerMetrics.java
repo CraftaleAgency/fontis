@@ -54,6 +54,15 @@ class AnswerMetrics {
 		if (response.generationMs() > 0) {
 			this.generation.record(Duration.ofMillis(response.generationMs()));
 		}
+		if (response.verification() != null) {
+			for (AskResponse.SentenceCheck sentence : response.verification().sentences()) {
+				Counter.builder("fontis.answer.sentences")
+					.description("Answer sentences by outcome of the check against the cited text")
+					.tag("verdict", sentence.verdict().name())
+					.register(this.registry)
+					.increment();
+			}
+		}
 	}
 
 }

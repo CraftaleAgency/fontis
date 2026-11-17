@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ApiError, ask, sourceLabel, splitCitations, type AskResponse, type Citation } from "@/lib/api";
+import {
+  ApiError,
+  ask,
+  sourceLabel,
+  splitCitations,
+  type AskResponse,
+  type Citation,
+  type SentenceCheck,
+  type Verification,
+} from "@/lib/api";
 import { backendLang, corpusLanguageName, dictionaries, type Locale } from "@/lib/i18n";
 
 type Turn = { id: number; question: string; response?: AskResponse; failed?: "error" | "tooMany" };
@@ -157,6 +166,18 @@ function Answer({ turnId, response, locale }: { turnId: number; response: AskRes
         )}
       </p>
 
+      {response.missing && (
+        <div className="px-4 pb-3">
+          <Notice>
+            {t.check.missing} {response.missing}
+          </Notice>
+        </div>
+      )}
+
+      {response.verification && response.verification.total > 0 && (
+        <Checks verification={response.verification} anchor={anchor} locale={locale} />
+      )}
+
       {response.citations.length > 0 && (
         <div className="border-t border-line px-4 py-3">
           <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">{t.sources}</h2>
@@ -195,9 +216,94 @@ function Source({ id, citation, locale }: { id: string; citation: Citation; loca
         {otherLanguage && (
           <p className="text-xs text-muted">{t.foundIn(corpusLanguageName(locale, citation.matchedLang))}</p>
         )}
+        {citation.appliesFrom && (
+          <p className="text-xs text-muted" title={citation.applicabilityNote ?? undefined}>
+            {t.check.appliesFrom(formatDate(citation.appliesFrom, locale))}
+            {citation.applicabilityNote ? " *" : ""}
+          </p>
+        )}
       </div>
     </li>
   );
+}
+
+/**
+ * The check of each sentence against the text it cites: the passage that supports it, where it is in
+ * the article, and the figures the cited text does not contain. Open by default when something is wrong.
+ */
+function Checks({
+  verification,
+  anchor,
+  locale,
+}: {
+  verification: Verification;
+  anchor: (n: number) => string;
+  locale: Locale;
+}) {
+  const t = dictionaries[locale];
+  const flagged = verification.sentences.some((s) => s.verdict === "FIGURE_MISMATCH" || s.verdict === "UNSUPPORTED");
+  return (
+    <details open={flagged} className="border-t border-line px-4 py-3 text-sm">
+      <summary className="cursor-pointer text-xs font-semibold tracking-wide text-muted uppercase">
+        {t.check.summary(verification.supported, verification.total)}
+      </summary>
+      <ol className="mt-2 flex flex-col gap-3">
+        {verification.sentences.map((sentence, i) => (
+          <SentenceRow key={i} sentence={sentence} anchor={anchor} locale={locale} />
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+function SentenceRow({
+  sentence,
+  anchor,
+  locale,
+}: {
+  sentence: SentenceCheck;
+  anchor: (n: number) => string;
+  locale: Locale;
+}) {
+  const t = dictionaries[locale];
+  const warn = sentence.verdict === "FIGURE_MISMATCH" || sentence.verdict === "UNSUPPORTED";
+  const ok = sentence.verdict === "SUPPORTED";
+  return (
+    <li className="flex flex-col gap-1">
+      <p>
+        <span
+          className={`mr-2 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+            warn ? "bg-warn-soft text-warn" : ok ? "bg-accent-soft text-accent" : "bg-surface text-muted ring-1 ring-line"
+          }`}
+        >
+          {t.check.verdict[sentence.verdict]}
+        </span>
+        {splitCitations(sentence.text)
+          .filter((part) => typeof part === "string")
+          .join("")}
+      </p>
+      {sentence.figuresMissing.length > 0 && (
+        <p className="text-xs text-warn">{t.check.figures(sentence.figuresMissing.join(", "))}</p>
+      )}
+      {sentence.passage && (
+        <blockquote aria-label={t.check.passage} className="border-l-2 border-line pl-3 text-xs text-muted">
+          {sentence.n != null && sentence.pinpoint && (
+            <a href={`#${anchor(sentence.n)}`} className="mr-1 font-semibold text-accent hover:underline">
+              [{sentence.n}] {sentence.pinpoint}
+            </a>
+          )}
+          {sentence.passage}
+        </blockquote>
+      )}
+    </li>
+  );
+}
+
+function formatDate(iso: string, locale: Locale): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  return Number.isNaN(date.getTime())
+    ? iso
+    : new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(date);
 }
 
 function Notice({ children, tone = "info" }: { children: React.ReactNode; tone?: "info" | "warn" }) {

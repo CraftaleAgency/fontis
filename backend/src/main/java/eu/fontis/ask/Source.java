@@ -17,14 +17,25 @@ import java.util.List;
  * @param score fused rank score (reciprocal rank fusion)
  * @param similarity cosine similarity of the best chunk, or {@code null} if it matched only by full text
  * @param retrievedChunks indexes of the unit's chunks found by retrieval in {@code matchedLang}, best first
+ * @param appliesFrom ISO date from which the unit applies (its own date, else its act's), or {@code null}
+ * @param applicabilityNote English note on when the unit applies, or {@code null}
  */
 public record Source(String celex, String unitId, String document, String label, String heading, String url,
-		String matchedLang, String content, double score, Double similarity, List<Integer> retrievedChunks) {
+		String matchedLang, String content, double score, Double similarity, List<Integer> retrievedChunks,
+		String appliesFrom, String applicabilityNote) {
+
+	/** A source without applicability data, e.g. from an uploaded document. */
+	public Source(String celex, String unitId, String document, String label, String heading, String url,
+			String matchedLang, String content, double score, Double similarity, List<Integer> retrievedChunks) {
+		this(celex, unitId, document, label, heading, url, matchedLang, content, score, similarity, retrievedChunks,
+				null, null);
+	}
 
 	/** The same source with another text, e.g. several chunks of the unit instead of the best one. */
 	public Source withContent(String newContent) {
 		return new Source(this.celex, this.unitId, this.document, this.label, this.heading, this.url,
-				this.matchedLang, newContent, this.score, this.similarity, this.retrievedChunks);
+				this.matchedLang, newContent, this.score, this.similarity, this.retrievedChunks, this.appliesFrom,
+				this.applicabilityNote);
 	}
 
 	/** One line naming the source, e.g. "GDPR — Articolo 17 — Diritto alla cancellazione". */

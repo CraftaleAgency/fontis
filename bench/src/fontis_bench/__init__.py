@@ -4,7 +4,7 @@ import argparse
 from collections import Counter
 from pathlib import Path
 
-from . import corpus, dataset, evaluate, report
+from . import applicability, corpus, dataset, evaluate, report
 
 # bench/src/fontis_bench/__init__.py -> repository root
 ROOT = Path(__file__).resolve().parents[3]
@@ -23,6 +23,8 @@ def main() -> None:
     fetch_cmd.add_argument("--force", action="store_true", help="download again even if cached")
     corpus_sub.add_parser("build", help="split documents into citable units (JSONL)")
     corpus_sub.add_parser("check", help="check that unit ids align across languages")
+    export_cmd = corpus_sub.add_parser("export", help="write the corpus as a Hugging Face dataset folder")
+    export_cmd.add_argument("--out", type=Path, default=DEFAULT_DATA_DIR / "hf-corpus")
 
     eval_cmd = sub.add_parser("eval", help="benchmark a running Fontis backend")
     eval_cmd.add_argument("--dataset", type=Path, default=DEFAULT_DATASET)
@@ -37,6 +39,9 @@ def main() -> None:
     judge_cmd = eval_sub.add_parser("judge", help="grade answers with a different model")
     judge_cmd.add_argument("--ollama", default="http://localhost:11434")
     judge_cmd.add_argument("--model", default="gemma4:12b")
+    support_cmd = eval_sub.add_parser("support", help="judge whether cited sentences are supported by their sources")
+    support_cmd.add_argument("--ollama", default="http://localhost:11434")
+    support_cmd.add_argument("--model", default="gemma4:12b")
     report_cmd = eval_sub.add_parser("report", help="write the summary and the Markdown report")
     report_cmd.add_argument("--out", type=Path, default=ROOT / "docs" / "benchmark")
 
@@ -56,8 +61,15 @@ def _corpus(args) -> None:
         for key, n in counts.items():
             print(f"{key:<20} {n:>5} units")
         print(f"{'total':<20} {sum(counts.values()):>5} units")
+    elif args.action == "export":
+        counts = corpus.export(args.data_dir, args.out)
+        print(f"{sum(counts.values())} units ({', '.join(f'{k} {v}' for k, v in counts.items())}) -> {args.out}")
+        print("Copy bench/huggingface/corpus/README.md into it before uploading.")
     elif args.action == "check":
-        ok = True
+        bad_dates = applicability.problems()
+        for problem in bad_dates:
+            print(problem)
+        ok = not bad_dates
         for row in corpus.alignment(args.data_dir):
             status = "aligned" if not row["missing"] else f"MISSING {row['missing']}"
             ok &= not row["missing"]
@@ -93,6 +105,9 @@ def _eval(args) -> None:
     elif args.action == "judge":
         count = evaluate.run_judge(questions, args.ollama, args.model, run_dir)
         print(f"{count} verdicts -> {run_dir / 'judge.jsonl'}")
+    elif args.action == "support":
+        count = evaluate.run_support(args.ollama, args.model, run_dir, args.data_dir / "corpus")
+        print(f"{count} answers checked -> {run_dir / 'support.jsonl'}")
     elif args.action == "report":
         summary = report.write(
             questions,

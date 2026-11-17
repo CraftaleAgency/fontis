@@ -24,6 +24,9 @@ EUR-Lex links. The model answers in the language of the question.
 | `citations` | Sources cited in the answer, with document, label, heading and EUR-Lex URL |
 | `sources` | Every source given to the model |
 | `retrievalMs`, `generationMs` | Timings |
+| `verification` | Each sentence checked against the cited text — see [Checking each sentence](#checking-each-sentence); `null` when the answer was not checked |
+| `missing` | What the sources do not say, when the model answered only part of the question (`fontis.ask.features.partial-answers`); otherwise `null` |
+| `citations[].appliesFrom`, `.applicabilityNote` | From when the cited unit applies, and a note when that changed (e.g. a later deferral) |
 
 `GET /api/search?q=...&lang=...&limit=...` returns retrieval results only. The benchmark uses it to
 measure retrieval separately from generation and to compare ranking settings; it is open to
@@ -78,3 +81,53 @@ Retrieval takes 0.4–1 s (mostly the embedding call), generation 2–12 s once 
 Known weaknesses, to be measured by the benchmark: the NIS2 answer cites a recital rather than
 Article 23, which states the same rule; the Spanish answer on switching stays vague about the
 deadlines in Article 25.
+
+## Checking each sentence
+
+After generation, `AnswerVerifier` checks every sentence of the answer against the text the model
+was given for the sources it cites. One embedding call per answer; the answer itself is not changed.
+
+1. **Sentences.** The answer is split into sentences; each line of a list is one, and a list item
+   without citations takes those of its lead-in ("The following practices are prohibited [1]:").
+2. **Passage.** Among the lines of the cited sources' text, the one closest to the sentence by
+   `bge-m3` similarity. Being multilingual, it compares an Italian sentence with a French passage.
+3. **Pinpoint.** The passage's place in its article, from the paragraph and point markers of the
+   unit (`1.`, `(a)`, `a)`, `(i)`), which are the same in every language: "Articolo 5(1)(c)". The
+   passage is returned in the answer language when the unit exists in it.
+4. **Figures.** Every amount, percentage, period and year in the sentence must appear in the cited
+   text or in the question, however written ("20 000 000 EUR" = "20 milioni di euro"). Numbers in
+   references ("Article 83(5)", "2016/679") and numbers below 10 (often written in words in the law)
+   are not checked.
+
+| Verdict | Meaning |
+|---|---|
+| `SUPPORTED` | similarity ≥ `fontis.verify.supported` (0.62) |
+| `WEAK` | similarity ≥ `fontis.verify.weak` (0.50) |
+| `UNSUPPORTED` | no cited passage is close |
+| `FIGURE_MISMATCH` | a figure is not in the cited text — the most harmful error found so far (v2: the lower GDPR fine tier quoted for the higher one) |
+| `UNCITED` | the sentence cites nothing |
+
+The web app shows the summary ("4 of 5 sentences match the cited text") and each sentence with its
+passage, open by default when a figure is missing or a sentence is unsupported. Prometheus counts
+`fontis_answer_sentences_total` by verdict.
+
+**Not calibrated yet.** The thresholds are a first guess. `fontis-bench eval support` asks the judge
+model whether each sentence is supported by the full cited unit; the report compares the two, and
+the thresholds should be set from that comparison. Embedding similarity measures closeness, not
+entailment: a sentence that negates its passage can still score high. The figure check is exact,
+but it only catches a figure that is absent from the cited text, not one taken from the wrong
+paragraph of it.
+
+## Optional context and prompt features
+
+Off by default until measured on the benchmark, except the dates (`fontis.ask.features`):
+
+| Setting | Default | Effect |
+|---|---|---|
+| `applicability` (`FONTIS_APPLICABILITY`) | on | Today's date at the top of the prompt and "(Applies from 2026-08-02. …)" under each source with a date, so "does this already apply?" has an answer. Dates come from the corpus build (`bench/src/fontis_bench/applicability.py`). |
+| `references` (`FONTIS_FOLLOW_REFERENCES`) | 0 | Up to this many units that the best source refers to (e.g. Annex III from Article 6) added as extra numbered sources, 1,200 characters each. |
+| `definition-chars` (`FONTIS_DEFINITION_CHARS`) | 0 | Definitions of the terms the sources use, from the act's definitions article (AI Act Article 3, GDPR Article 4…), added as one extra source within this many characters, most specific terms first. |
+| `partial-answers` (`FONTIS_PARTIAL_ANSWERS`) | off | The model may answer the covered part and end with `NOT_IN_SOURCES: …`, returned as `missing`. |
+
+Extra sources lengthen the prompt: with all of them on, check that it still fits `num-ctx` (the
+backend logs a warning when it may not).

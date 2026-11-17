@@ -7,6 +7,12 @@
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server
 	}
+	# MCP server (Streamable HTTP): straight to the backend, without buffering streamed responses.
+	handle /mcp* {
+		reverse_proxy backend:8080 {
+			flush_interval -1
+		}
+	}
 	# Answers can take up to a few minutes while a model loads.
 	reverse_proxy frontend:3000 {
 		transport http {

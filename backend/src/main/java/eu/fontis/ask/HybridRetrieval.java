@@ -75,7 +75,9 @@ class HybridRetrieval implements Retrieval {
 			       d.short_name,
 			       coalesce(answer.label, matched.label) AS label,
 			       coalesce(answer.heading, matched.heading) AS heading,
-			       coalesce(answer.url, matched.url) AS url
+			       coalesce(answer.url, matched.url) AS url,
+			       coalesce(matched.applies_from, d.applies_from)::text AS applies_from,
+			       matched.applicability_note
 			FROM unit_scores u
 			JOIN best_chunk b USING (celex, unit_id)
 			JOIN chunk c USING (celex, lang, unit_id, chunk_index)
@@ -153,7 +155,8 @@ class HybridRetrieval implements Retrieval {
 			.query((rs, rowNum) -> new Source(rs.getString("celex"), rs.getString("unit_id"),
 					rs.getString("short_name"), rs.getString("label"), rs.getString("heading"), rs.getString("url"),
 					rs.getString("matched_lang"), rs.getString("content"), rs.getDouble("score"),
-					(Double) rs.getObject("similarity"), SourceContext.parseIndexes(rs.getArray("retrieved_chunks"))))
+					(Double) rs.getObject("similarity"), SourceContext.parseIndexes(rs.getArray("retrieved_chunks")),
+					rs.getString("applies_from"), rs.getString("applicability_note")))
 			.list();
 		Double best = this.jdbc.sql(BEST_SIMILARITY)
 			.param("vec", vec)

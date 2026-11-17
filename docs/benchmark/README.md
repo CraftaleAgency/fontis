@@ -2,6 +2,26 @@
 
 A multilingual benchmark for retrieval and cited answers on EU legislation.
 
+## Dataset v2.1
+
+[`bench/datasets/v2.1.jsonl`](../../bench/datasets/v2.1.jsonl): v2 for the corpus with DORA, the Cyber
+Resilience Act and the Digital Services Act. Two questions of v2 that should be refused become answerable, in all
+five languages, with new ids:
+
+- `dsa-fine` (was `none-dsa-fine`): Digital Services Act Article 74, fines up to 6% of worldwide annual turnover;
+- `cra-reporting` (was `none-cra-reporting`): Cyber Resilience Act Article 14, early warning within 24 hours.
+
+150 questions, 130 answerable. v2 stays the default (`--dataset` selects v2.1), so that results remain comparable
+with the published ones; v2.1 needs the new acts in the corpus.
+
+## Supported sentences
+
+`fontis-bench eval support` asks the judge, for every sentence of every answer, whether the **full text** of the
+units it cites states it (*yes*, *partly*, *no*). It reads the units from `data/corpus`, in the language that matched,
+not the passage Fontis showed the model, so it checks Fontis' own verification rather than repeating it. When the
+answers carry Fontis' verification (`verification` in the response), the report also shows its verdicts, how often
+they agree with the judge, and the share of answers with a figure that the cited text does not contain.
+
 ## Dataset v2
 
 [`bench/datasets/v2.jsonl`](../../bench/datasets/v2.jsonl), also published on Hugging Face as
@@ -48,6 +68,7 @@ French and Spanish.
 | Correct (judge) | The judge rates the answer *correct* against the reference |
 | Correctness score | correct = 1, partial = 0.5, incorrect or not answered = 0 |
 | Correct refusals | Unanswerable questions answered with `NO_SOURCE` or `NO_ANSWER` |
+| Supported sentences | Sentences with a citation that the judge finds stated in the full text of the cited units |
 
 ## Judge
 
@@ -70,6 +91,7 @@ uv run fontis-bench eval check                  # dataset sanity (v2 by default;
 uv run fontis-bench eval retrieval              # /api/search in hybrid, vector and text modes
 uv run fontis-bench eval answers                # /api/ask
 uv run fontis-bench eval judge --ollama http://<host>:11434 --model gemma4:12b
+uv run fontis-bench eval support --ollama http://<host>:11434 --model gemma4:12b   # sentence support
 uv run fontis-bench eval report                 # docs/benchmark/<run>.md and <run>-summary.json
 uv run fontis-bench eval --run v1-tuning tune   # compare ranking settings
 ```

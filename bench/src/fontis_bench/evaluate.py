@@ -6,6 +6,7 @@ interrupted and resumed:
     retrieval.jsonl  /api/search in hybrid, vector and text modes
     answers.jsonl    /api/ask
     judge.jsonl      answer correctness judged by a different model than the one answering
+    support.jsonl    whether each cited sentence is supported by the full text of its cited units
 """
 
 from __future__ import annotations
@@ -18,6 +19,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import httpx
+
+from . import support
 
 MODES = ("hybrid", "vector", "text")
 SEARCH_LIMIT = 10
@@ -223,4 +226,35 @@ def run_tuning(questions: list[dict], api: str, run_dir: Path, grid: list[dict] 
                     },
                 )
                 count += 1
+    return count
+
+
+def run_support(ollama: str, model: str, run_dir: Path, corpus_dir: Path) -> int:
+    """Judge whether each cited sentence of every answer is supported by the full text of its cited units.
+
+    One record per answer in support.jsonl, with a verdict per sentence: yes, partly, no; ``uncited`` when the
+    sentence cites nothing, ``unavailable`` when no cited unit is in the corpus (e.g. uploaded documents).
+    """
+    corpus = support.Corpus(corpus_dir)
+    out = run_dir / "support.jsonl"
+    done = _done_ids(out, lambda r: r["id"])
+    count = 0
+    with httpx.Client(base_url=ollama, timeout=600) as client:
+        for answer in read_jsonl(run_dir / "answers.jsonl"):
+            if answer["id"] in done or answer.get("status") != "ANSWERED" or not answer.get("answer"):
+                continue
+            sentences = []
+            for s in support.answer_sentences(answer):
+                row = {"text": s["text"], "citations": s["citations"], "system": s["system"]}
+                if not s["citations"]:
+                    row |= {"verdict": "uncited", "reason": None}
+                else:
+                    sources = support.sources_text(answer, s["citations"], corpus)
+                    if sources is None:
+                        row |= {"verdict": "unavailable", "reason": None}
+                    else:
+                        row |= support.judge_sentence(client, model, s["text"], sources, _request)
+                sentences.append(row)
+            _append(out, {"id": answer["id"], "judge": model, "sentences": sentences})
+            count += 1
     return count
